@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar } from 'lucide-react';
-import { User, Role, Task } from '../types';
+import { User, Role, Task, getTaskAssigneeIds, getParticipantStatus } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
 const Team = () => {
@@ -58,12 +58,12 @@ const Team = () => {
   };
 
   const getUserStats = (userId: string) => {
-    const userTasks = tasks.filter(t => t.assigneeId === userId);
+    const userTasks = tasks.filter(t => getTaskAssigneeIds(t).includes(userId));
     const total = userTasks.length;
     
     // Calculate completed based on system status OR transfer history
     const completedTasksList = tasks.filter(t => {
-        const isCurrentOwnerCompleted = t.assigneeId === userId && t.status === 'COMPLETED';
+        const isCurrentOwnerCompleted = getTaskAssigneeIds(t).includes(userId) && getParticipantStatus(t, userId) === 'COMPLETED';
         const isTransferredFromMe = t.previousAssignees?.includes(userId) && t.assigneeId !== userId;
         return isCurrentOwnerCompleted || isTransferredFromMe;
     });
