@@ -134,12 +134,12 @@ export default async function handler(request: any, response: any) {
     }
     operations.push({ type: 'delete', ref: targetSnapshot.ref });
 
-    await commitOperations(firestore, operations);
     try {
       await auth.deleteUser(targetId);
     } catch (error: any) {
       if (error?.code !== 'auth/user-not-found') throw error;
     }
+    await commitOperations(firestore, operations);
 
     return response.status(200).json({
       success: true,
