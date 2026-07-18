@@ -17,7 +17,19 @@ export default async function handler(request: any, response: any) {
     const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash', contents: prompt });
     return response.status(200).json({ answer: result.text || 'لم أتمكن من إنشاء إجابة.' });
-  } catch (error) {
-    return response.status(500).json({ error: 'AI_REQUEST_FAILED' });
+  } catch (error: any) {
+    // Never log the provider message because it can contain request details. The
+    // status/code are enough to diagnose configuration problems safely.
+    const status = Number(error?.status || error?.code || error?.response?.status || 0);
+    console.error('Gemini request failed', {
+      status,
+      name: String(error?.name || 'Error').slice(0, 80),
+    });
+
+    if (status === 400) return response.status(502).json({ error: 'AI_KEY_OR_REQUEST_INVALID' });
+    if (status === 401 || status === 403) return response.status(502).json({ error: 'AI_KEY_NOT_AUTHORIZED' });
+    if (status === 404) return response.status(502).json({ error: 'AI_MODEL_UNAVAILABLE' });
+    if (status === 429) return response.status(429).json({ error: 'AI_QUOTA_EXCEEDED' });
+    return response.status(502).json({ error: 'AI_PROVIDER_UNAVAILABLE' });
   }
 }
