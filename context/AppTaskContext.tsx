@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, getTaskAssigneeIds, getTaskLastActivityTime } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, Department, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
@@ -12,11 +12,6 @@ import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, d
 
 // EmailJS
 import emailjs from '@emailjs/browser';
-
-// ---------------------------------------------------------------------------
-// 🛑 إعدادات المدير المالك (Super Admin)
-const ADMIN_KEYWORD = "ndrtasks"; 
-// ---------------------------------------------------------------------------
 
 interface TimeRemaining {
     days: number;
@@ -29,6 +24,7 @@ interface TimeRemaining {
 interface TaskContextType {
   tasks: Task[];
   users: User[];
+  departments: Department[];
   currentUser: User | null;
   notifications: Notification[];
   showLeaderboard: boolean;
@@ -52,6 +48,9 @@ interface TaskContextType {
   addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   updateUser: (user: User) => void;
   deleteUser: (userId: string) => void;
+  addDepartment: (name: string) => Promise<{ success: boolean; message: string }>;
+  updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
+  deleteDepartment: (departmentId: string) => Promise<{ success: boolean; message: string }>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   markTaskAsRead: (taskId: string) => void;
@@ -68,6 +67,7 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [users, setUsers] = useState<User[]>(USERS);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
@@ -118,12 +118,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             dataUnsubscribersRef.current = [];
 
             const isManager = profile.role === 'MANAGER';
-            const usersSource = isManager
+            const isSuperAdmin = isSuperAdminUser(profile);
+            const usersSource = isSuperAdmin
               ? collection(db, 'users')
               : query(collection(db, 'users'), where('department', '==', profile.department));
-            const tasksSource = isManager
+            const tasksSource = isSuperAdmin
               ? collection(db, 'tasks')
-              : query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id));
+              : isManager
+                ? query(collection(db, 'tasks'), where('department', '==', profile.department))
+                : query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id));
             const notificationsSource = query(collection(db, 'notifications'), where('userId', '==', profile.id));
 
             const unsubUsers = onSnapshot(usersSource, (snapshot) => {
@@ -151,17 +154,25 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              setNotifications(fetchedNotifs);
             }, error => console.warn('تعذر تحميل الإشعارات', error));
 
-            dataUnsubscribersRef.current = [unsubUsers, unsubTasks, unsubNotifications];
+            const departmentsSource = isSuperAdmin
+              ? collection(db, 'departments')
+              : query(collection(db, 'departments'), where('name', '==', profile.department));
+            const unsubDepartments = onSnapshot(departmentsSource, snapshot => {
+                setDepartments(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as Department)));
+            }, error => console.warn('تعذر تحميل الأقسام', error));
+
+            dataUnsubscribersRef.current = [unsubUsers, unsubTasks, unsubNotifications, unsubDepartments];
           };
 
           onAuthStateChanged(auth, async (firebaseUser) => {
              if (firebaseUser) {
-               if (firebaseUser.email?.toLowerCase().includes(ADMIN_KEYWORD.toLowerCase()) || firebaseUser.email?.toLowerCase().includes('admin')) {
+               if (firebaseUser.email?.toLowerCase() === 'ndrtasks@gmail.com') {
                    const adminUser: User = {
                         id: firebaseUser.uid,
                         name: 'مدير النظام',
                         email: firebaseUser.email!,
                         role: 'MANAGER',
+                        accessLevel: 'SUPER_ADMIN',
                         avatar: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff',
                         department: 'الإدارة العليا'
                    };
@@ -172,7 +183,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                    try {
                        const docSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
                        if (docSnap.exists()) {
-                           const profile = { id: docSnap.id, ...docSnap.data() } as User;
+                           const storedProfile = { id: docSnap.id, ...docSnap.data() } as User;
+                           const profile = storedProfile.role === 'MANAGER' && !storedProfile.accessLevel
+                             ? { ...storedProfile, accessLevel: 'DEPARTMENT_MANAGER' as const }
+                             : storedProfile;
                            setCurrentUser(profile);
                            subscribeToUserData(profile);
                        } else {
@@ -307,7 +321,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await signInWithEmailAndPassword(authRef.current, email, pass);
         return { success: true };
       } catch (error: any) {
-        if (error.code === 'auth/user-not-found' && (email.toLowerCase().includes(ADMIN_KEYWORD.toLowerCase()) || email.toLowerCase().includes('admin'))) {
+        if (error.code === 'auth/user-not-found' && email.toLowerCase() === 'ndrtasks@gmail.com') {
             try {
                 const newUserCred = await createUserWithEmailAndPassword(authRef.current, email, pass);
                 const adminUser: User = {
@@ -315,6 +329,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: 'مدير النظام',
                     email: email,
                     role: 'MANAGER',
+                    accessLevel: 'SUPER_ADMIN',
                     avatar: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff',
                     department: 'الإدارة العليا'
                 };
@@ -391,16 +406,18 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addTask = async (task: Task) => {
+    if (!currentUser) return;
+    const effectiveTask = isSuperAdminUser(currentUser) ? task : { ...task, department: currentUser.department, createdBy: currentUser.id };
     const lastUpdated = new Date().toISOString();
     if (isLiveMode && dbRef.current) {
-        const { id, ...taskData } = task; 
+        const { id, ...taskData } = effectiveTask;
         await addDoc(collection(dbRef.current, 'tasks'), { ...taskData, lastUpdated: serverTimestamp() });
     } else {
         setTasks(prev => [task, ...prev]);
     }
     markTaskAsRead(task.id);
-    getTaskAssigneeIds(task).forEach(assigneeId => {
-      createNotification(assigneeId, 'مهمة جديدة', `مهمة جديدة: ${task.title}`, 'INFO', task.id);
+    getTaskAssigneeIds(effectiveTask).forEach(assigneeId => {
+      createNotification(assigneeId, 'مهمة جديدة', `مهمة جديدة: ${effectiveTask.title}`, 'INFO', effectiveTask.id);
       const assignee = users.find(u => u.id === assigneeId);
       if (assignee) sendEmailNotification(assignee.email, `مهمة جديدة: ${task.title}`, `تم إسناد مهمة جديدة إليك ضمن فريق عمل.`);
     });
@@ -643,16 +660,24 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addUser = async (user: User) => {
+    if (!currentUser || currentUser.role !== 'MANAGER') return { success: false, message: 'لا توجد صلاحية لإضافة حسابات.' };
+    const safeUser: User = isSuperAdminUser(currentUser)
+      ? { ...user, accessLevel: user.role === 'MANAGER' ? 'DEPARTMENT_MANAGER' : undefined }
+      : { ...user, role: 'EMPLOYEE', accessLevel: undefined, department: currentUser.department, departmentId: currentUser.departmentId, managerId: currentUser.id };
     if (isLiveMode && dbRef.current && authRef.current) {
          let createdAuthUser: any = null;
          let secondaryAuth: any = null;
          try {
              const secondaryApp = getApps().find(app => app.name === 'secondary') || initializeApp(firebaseConfig, 'secondary');
              secondaryAuth = getAuth(secondaryApp);
-             const userCred = await createUserWithEmailAndPassword(secondaryAuth, user.email, user.password || '123456');
+             const userCred = await createUserWithEmailAndPassword(secondaryAuth, safeUser.email, safeUser.password || '123456');
              createdAuthUser = userCred.user;
-             await setDoc(doc(dbRef.current, 'users', userCred.user.uid), { ...user, id: userCred.user.uid, password: '' }); // Don't store password in plain text
-             sendEmailNotification(user.email, 'تم إنشاء حسابك', `كلمة المرور: ${user.password || '123456'}`);
+             await setDoc(doc(dbRef.current, 'users', userCred.user.uid), { ...safeUser, id: userCred.user.uid, password: '' }); // Don't store password in plain text
+             if (safeUser.role === 'MANAGER') {
+                 const department = departments.find(item => item.name === safeUser.department);
+                 if (department) await updateDoc(doc(dbRef.current, 'departments', department.id), { managerId: userCred.user.uid });
+             }
+             sendEmailNotification(safeUser.email, 'تم إنشاء حسابك', `كلمة المرور: ${safeUser.password || '123456'}`);
              return { success: true };
          } catch (error: any) {
              // Prevent an orphan Authentication account when saving the Firestore profile fails.
@@ -677,24 +702,70 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              }
          }
     } else {
-        setUsers(prev => [...prev, user]);
+        setUsers(prev => [...prev, safeUser]);
         return { success: true };
     }
   };
 
   const updateUser = async (updatedUser: User) => {
+    if (!currentUser || currentUser.role !== 'MANAGER') return;
+    const existing = users.find(user => user.id === updatedUser.id);
+    if (!isSuperAdminUser(currentUser) && (!existing || existing.department !== currentUser.department || existing.role !== 'EMPLOYEE')) return;
+    const safeUpdatedUser = isSuperAdminUser(currentUser)
+      ? updatedUser
+      : { ...updatedUser, role: 'EMPLOYEE' as const, accessLevel: undefined, department: currentUser.department, departmentId: currentUser.departmentId, managerId: currentUser.id };
     if (isLiveMode && dbRef.current) {
-        const { id, ...data } = updatedUser;
+        const { id, ...data } = safeUpdatedUser;
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
     } else {
-        setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+        setUsers(prev => prev.map(u => u.id === safeUpdatedUser.id ? safeUpdatedUser : u));
     }
     if (currentUser?.id === updatedUser.id) setCurrentUser(updatedUser);
   };
 
   const deleteUser = async (userId: string) => {
+    const target = users.find(user => user.id === userId);
+    if (!currentUser || currentUser.role !== 'MANAGER' || userId === currentUser.id) return;
+    if (!isSuperAdminUser(currentUser) && (!target || target.role !== 'EMPLOYEE' || target.department !== currentUser.department)) return;
     if (isLiveMode && dbRef.current) await deleteDoc(doc(dbRef.current, 'users', userId));
     else setUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const addDepartment = async (name: string) => {
+      const cleanName = name.trim();
+      if (!isSuperAdminUser(currentUser)) return { success: false, message: 'إنشاء الأقسام متاح للمدير العام فقط.' };
+      if (!cleanName) return { success: false, message: 'أدخل اسم القسم.' };
+      if (departments.some(department => department.name.toLowerCase() === cleanName.toLowerCase())) return { success: false, message: 'هذا القسم موجود مسبقًا.' };
+      if (isLiveMode && dbRef.current) await addDoc(collection(dbRef.current, 'departments'), { name: cleanName, createdAt: serverTimestamp() });
+      else setDepartments(previous => [...previous, { id: `department_${Date.now()}`, name: cleanName, createdAt: new Date().toISOString() }]);
+      return { success: true, message: 'تم إنشاء القسم بنجاح.' };
+  };
+
+  const updateDepartment = async (departmentId: string, name: string) => {
+      const cleanName = name.trim();
+      if (!isSuperAdminUser(currentUser)) return { success: false, message: 'تعديل الأقسام متاح للمدير العام فقط.' };
+      const oldDepartment = departments.find(department => department.id === departmentId);
+      if (!oldDepartment || !cleanName) return { success: false, message: 'بيانات القسم غير صحيحة.' };
+      if (isLiveMode && dbRef.current) {
+          await updateDoc(doc(dbRef.current, 'departments', departmentId), { name: cleanName });
+          await Promise.all(users.filter(user => user.department === oldDepartment.name).map(user => updateDoc(doc(dbRef.current!, 'users', user.id), { department: cleanName })));
+          await Promise.all(tasks.filter(task => task.department === oldDepartment.name).map(task => updateDoc(doc(dbRef.current!, 'tasks', task.id), { department: cleanName })));
+      } else {
+          setDepartments(previous => previous.map(item => item.id === departmentId ? { ...item, name: cleanName } : item));
+          setUsers(previous => previous.map(user => user.department === oldDepartment.name ? { ...user, department: cleanName } : user));
+          setTasks(previous => previous.map(task => task.department === oldDepartment.name ? { ...task, department: cleanName } : task));
+      }
+      return { success: true, message: 'تم تحديث اسم القسم.' };
+  };
+
+  const deleteDepartment = async (departmentId: string) => {
+      if (!isSuperAdminUser(currentUser)) return { success: false, message: 'حذف الأقسام متاح للمدير العام فقط.' };
+      const department = departments.find(item => item.id === departmentId);
+      if (!department) return { success: false, message: 'القسم غير موجود.' };
+      if (users.some(user => user.department === department.name) || tasks.some(task => task.department === department.name)) return { success: false, message: 'انقل الموظفين والمهام من القسم قبل حذفه.' };
+      if (isLiveMode && dbRef.current) await deleteDoc(doc(dbRef.current, 'departments', departmentId));
+      else setDepartments(previous => previous.filter(item => item.id !== departmentId));
+      return { success: true, message: 'تم حذف القسم.' };
   };
 
   const markNotificationAsRead = async (id: string) => {
@@ -716,10 +787,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <TaskContext.Provider value={{ 
-        tasks, users, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
+        tasks, users, departments, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
         login, loginWithCredentials, recoverPassword, changePassword, logout, 
         addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
-        addUser, updateUser, deleteUser, sendTaskReminder,
+        addUser, updateUser, deleteUser, addDepartment, updateDepartment, deleteDepartment, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
         toggleLeaderboardVisibility, calculateTimeRemaining
