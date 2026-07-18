@@ -36,9 +36,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
   // Mark task as read when modal opens
   useEffect(() => {
       if (task) {
+          // ما دام المستخدم داخل المهمة، أي تحديث ظاهر أمامه يعتبر مقروءًا.
           markTaskAsRead(task.id);
       }
-  }, [taskId]);
+  }, [taskId, task?.lastUpdated]);
 
   // Wrapper for onClose to ensure we mark as read when closing
   const handleClose = () => {
