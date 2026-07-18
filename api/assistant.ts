@@ -15,8 +15,25 @@ export default async function handler(request: any, response: any) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const result = await ai.models.generateContent({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash', contents: prompt });
-    return response.status(200).json({ answer: result.text || 'لم أتمكن من إنشاء إجابة.' });
+    const models = [
+      process.env.GEMINI_MODEL,
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
+    ].filter((model, index, all): model is string => Boolean(model) && all.indexOf(model) === index);
+
+    let lastError: any;
+    for (const model of models) {
+      try {
+        const result = await ai.models.generateContent({ model, contents: prompt });
+        return response.status(200).json({ answer: result.text || 'لم أتمكن من إنشاء إجابة.' });
+      } catch (error: any) {
+        lastError = error;
+        const status = Number(error?.status || error?.code || error?.response?.status || 0);
+        if (status !== 404) throw error;
+      }
+    }
+    throw lastError;
   } catch (error: any) {
     // Never log the provider message because it can contain request details. The
     // status/code are enough to diagnose configuration problems safely.
