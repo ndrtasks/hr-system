@@ -7,7 +7,7 @@ import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
 // Firebase Imports
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe, serverTimestamp } from 'firebase/firestore';
 
 // EmailJS
@@ -37,6 +37,7 @@ interface TaskContextType {
   login: (userId: string) => void;
   loginWithCredentials: (email: string, pass: string, requiredRole?: Role) => Promise<{ success: boolean; message?: string }>;
   recoverPassword: (email: string) => Promise<{ success: boolean; message: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
@@ -341,6 +342,29 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           } catch (error: any) { return { success: false, message: "فشل إرسال الرابط." }; }
       }
       return { success: false, message: "النظام غير متصل" };
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+      const firebaseUser = authRef.current?.currentUser;
+      if (!isLiveMode || !firebaseUser?.email) return { success: false, message: 'النظام غير متصل بحساب Firebase.' };
+      if (newPassword.length < 8) return { success: false, message: 'كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف.' };
+      if (currentPassword === newPassword) return { success: false, message: 'اختر كلمة مرور جديدة مختلفة عن الحالية.' };
+      try {
+          const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+          await reauthenticateWithCredential(firebaseUser, credential);
+          await updatePassword(firebaseUser, newPassword);
+          return { success: true, message: 'تم تغيير كلمة المرور بنجاح.' };
+      } catch (error: any) {
+          const messages: Record<string, string> = {
+              'auth/invalid-credential': 'كلمة المرور الحالية غير صحيحة.',
+              'auth/wrong-password': 'كلمة المرور الحالية غير صحيحة.',
+              'auth/weak-password': 'كلمة المرور الجديدة ضعيفة.',
+              'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلاً ثم حاول مجددًا.',
+              'auth/requires-recent-login': 'يلزم تسجيل الخروج والدخول مجددًا قبل تغيير كلمة المرور.',
+              'auth/network-request-failed': 'تعذر الاتصال. تحقق من الإنترنت وحاول مجددًا.'
+          };
+          return { success: false, message: messages[error?.code] || 'تعذر تغيير كلمة المرور.' };
+      }
   };
 
   const createNotification = async (userId: string, title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING', taskId?: string) => {
@@ -693,7 +717,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <TaskContext.Provider value={{ 
         tasks, users, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
-        login, loginWithCredentials, recoverPassword, logout, 
+        login, loginWithCredentials, recoverPassword, changePassword, logout, 
         addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
