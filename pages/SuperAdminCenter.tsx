@@ -19,7 +19,7 @@ const SuperAdminCenter = () => {
   }, [tasks, users, communicationMessages, currentUser?.id]);
 
   const departmentStats = useMemo(() => departments.map(department => {
-    const departmentTasks = tasks.filter(task => task.department === department.name);
+    const departmentTasks = tasks.filter(task => task.department === department.name || task.departments?.includes(department.name));
     const done = departmentTasks.filter(task => task.status === 'COMPLETED').length;
     const late = departmentTasks.filter(task => task.status === 'LATE' || (task.status !== 'COMPLETED' && new Date(task.dueDate).getTime() < Date.now())).length;
     const manager = users.find(user => user.id === department.managerId) || users.find(user => user.role === 'MANAGER' && user.department === department.name);
