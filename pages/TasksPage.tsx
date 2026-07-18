@@ -29,6 +29,11 @@ const TasksPage = () => {
       const matchesStatus = statusFilter === 'ALL' || effectiveStatus === statusFilter;
       const matchesSearch = t.title.includes(searchQuery) || t.description.includes(searchQuery);
       return matchesStatus && matchesSearch;
+  }).sort((a, b) => {
+      // آخر رسالة أو تغيير أو مرفق يرفع المهمة للأعلى عند المدير والموظف.
+      const latestA = new Date(a.lastUpdated || 0).getTime();
+      const latestB = new Date(b.lastUpdated || 0).getTime();
+      return latestB - latestA;
   });
 
   return (
