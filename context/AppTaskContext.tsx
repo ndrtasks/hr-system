@@ -39,7 +39,7 @@ interface TaskContextType {
   loginWithCredentials: (email: string, pass: string, portal: LoginPortal) => Promise<{ success: boolean; message?: string }>;
   recoverPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
-  cleanupTestData: (action: 'preview' | 'execute', confirmation?: string) => Promise<{ success: boolean; message?: string; counts?: CleanupCounts }>;
+  cleanupTestData: (action: 'preview' | 'execute', confirmation?: string, deleteDepartments?: boolean) => Promise<{ success: boolean; message?: string; counts?: CleanupCounts }>;
   logout: () => void;
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
@@ -400,7 +400,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const cleanupTestData = async (action: 'preview' | 'execute', confirmation = '') => {
+  const cleanupTestData = async (action: 'preview' | 'execute', confirmation = '', deleteDepartments = false) => {
       const firebaseUser = authRef.current?.currentUser;
       if (!isLiveMode || !firebaseUser || !isSuperAdminUser(currentUser)) {
           return { success: false, message: 'هذه العملية متاحة للمدير العام فقط.' };
@@ -410,7 +410,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const response = await fetch('/api/cleanup-test-data', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ action, confirmation })
+              body: JSON.stringify({ action, confirmation, deleteDepartments })
           });
           const result = await response.json();
           return { success: response.ok && result.success, message: result.message, counts: result.counts };
