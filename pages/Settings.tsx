@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Settings as SettingsIcon, Bell, Mail, Shield, Building, Save, Users, Eye, CheckCircle, KeyRound, EyeOff, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Mail, Shield, Building, Save, Users, Eye, CheckCircle, KeyRound, EyeOff, Loader2, Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { isSuperAdminUser, User } from '../types';
+import type { CleanupCounts } from '../context/AppTaskContext';
 
 const SettingsPage = () => {
-  const { currentUser, departments, users, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword, addDepartment, updateDepartment, deleteDepartment, addUser } = useTaskContext();
+  const { currentUser, departments, users, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword, cleanupTestData, addDepartment, updateDepartment, deleteDepartment, addUser } = useTaskContext();
   const isSuperAdmin = isSuperAdminUser(currentUser);
   
   const [systemName, setSystemName] = useState('نظام إدارة المهام');
@@ -27,6 +28,34 @@ const SettingsPage = () => {
   const [managerPassword, setManagerPassword] = useState('');
   const [departmentMessage, setDepartmentMessage] = useState('');
   const [departmentLoading, setDepartmentLoading] = useState(false);
+  const [cleanupCounts, setCleanupCounts] = useState<CleanupCounts | null>(null);
+  const [cleanupConfirmation, setCleanupConfirmation] = useState('');
+  const [cleanupAcknowledged, setCleanupAcknowledged] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState('');
+
+  const handleCleanupPreview = async () => {
+      setCleanupLoading(true);
+      setCleanupMessage('');
+      const result = await cleanupTestData('preview');
+      setCleanupLoading(false);
+      if (result.success && result.counts) setCleanupCounts(result.counts);
+      else setCleanupMessage(result.message || 'تعذرت معاينة البيانات.');
+  };
+
+  const handleCleanupExecute = async () => {
+      if (!cleanupAcknowledged || cleanupConfirmation !== 'حذف بيانات التجربة') return;
+      setCleanupLoading(true);
+      setCleanupMessage('');
+      const result = await cleanupTestData('execute', cleanupConfirmation);
+      setCleanupLoading(false);
+      setCleanupMessage(result.message || (result.success ? 'تم التنظيف بنجاح.' : 'تعذر التنظيف.'));
+      if (result.success) {
+          setCleanupCounts(null);
+          setCleanupConfirmation('');
+          setCleanupAcknowledged(false);
+      }
+  };
 
   const handleAddDepartment = async () => {
       if (![departmentName, managerName, managerJobTitle, managerEmail, managerPassword].every(value => value.trim())) {
@@ -227,7 +256,7 @@ const SettingsPage = () => {
               </div>
           </div>
 
-           {isSuperAdmin && <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+          {isSuperAdmin && <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
                   <Building size={20} className="text-emerald-500" />
                   الأقسام
@@ -258,6 +287,30 @@ const SettingsPage = () => {
                   )})}
               </div>
               {departmentMessage && <p className="text-sm text-slate-300 mt-3">{departmentMessage}</p>}
+          </div>}
+
+          {isSuperAdmin && <div className="bg-red-950/20 rounded-xl p-6 border border-red-900/60">
+              <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2"><AlertTriangle size={20} className="text-red-400" />تنظيف بيانات التجربة</h2>
+              <p className="text-sm text-slate-400 mb-4">يحذف جميع الحسابات عدا المدير العام، وكل المهام والإشعارات والمحادثات التجريبية. تبقى الأقسام وإعدادات النظام، وتُفرغ خانات مديري الأقسام لتعيين المديرين الحقيقيين لاحقًا.</p>
+              {!cleanupCounts ? (
+                  <button onClick={handleCleanupPreview} disabled={cleanupLoading} className="border border-red-700 text-red-300 hover:bg-red-500/10 disabled:opacity-50 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2">
+                      {cleanupLoading ? <Loader2 size={18} className="animate-spin"/> : <Eye size={18}/>} معاينة ما سيُحذف
+                  </button>
+              ) : <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-center">
+                      {[
+                          ['الحسابات', cleanupCounts.users], ['المهام', cleanupCounts.tasks], ['الإشعارات', cleanupCounts.notifications],
+                          ['المحادثات', cleanupCounts.conversations], ['الرسائل', cleanupCounts.messages], ['الأقسام الباقية', cleanupCounts.departmentsRetained]
+                      ].map(([label, count]) => <div key={String(label)} className="bg-slate-900/70 border border-slate-700 rounded-lg p-3"><div className="text-xl font-bold text-white">{count}</div><div className="text-xs text-slate-400">{label}</div></div>)}
+                  </div>
+                  <label className="flex items-start gap-2 text-sm text-slate-300"><input type="checkbox" checked={cleanupAcknowledged} onChange={event => setCleanupAcknowledged(event.target.checked)} className="mt-1"/><span>أفهم أن هذا الإجراء نهائي ولا يمكن استرجاع البيانات المحذوفة.</span></label>
+                  <div><label className="block text-xs text-slate-400 mb-1.5">للتأكيد اكتب: <span className="text-red-300 font-bold">حذف بيانات التجربة</span></label><input value={cleanupConfirmation} onChange={event => setCleanupConfirmation(event.target.value)} className="w-full bg-slate-900 border border-red-900 rounded-lg px-4 py-2.5 text-white outline-none focus:border-red-500" /></div>
+                  <div className="flex flex-wrap gap-2">
+                      <button onClick={handleCleanupExecute} disabled={cleanupLoading || !cleanupAcknowledged || cleanupConfirmation !== 'حذف بيانات التجربة'} className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2">{cleanupLoading ? <Loader2 size={18} className="animate-spin"/> : <Trash2 size={18}/>} حذف بيانات التجربة نهائيًا</button>
+                      <button onClick={() => { setCleanupCounts(null); setCleanupConfirmation(''); setCleanupAcknowledged(false); }} disabled={cleanupLoading} className="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700">إلغاء</button>
+                  </div>
+              </div>}
+              {cleanupMessage && <p className="text-sm text-slate-300 mt-3">{cleanupMessage}</p>}
           </div>}
 
           <div className="flex justify-end pt-4">
