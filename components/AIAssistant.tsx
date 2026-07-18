@@ -20,7 +20,15 @@ const AIAssistant = () => {
     try {
       const res = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: currentUser.role, userName: currentUser.name, question: text, tasks: tasks.map(task => ({ title: task.title, description: task.description, status: task.status, dueDate: task.dueDate, priority: task.priority })) }) });
       const data = await res.json();
-      setAnswer(data.answer || (data.error === 'AI_NOT_CONFIGURED' ? 'يلزم إضافة GEMINI_API_KEY في إعدادات Vercel لتشغيل المساعد.' : 'تعذر الاتصال بالمساعد حالياً.'));
+      const safeErrors: Record<string, string> = {
+        AI_NOT_CONFIGURED: 'يلزم إضافة GEMINI_API_KEY في إعدادات Vercel لتشغيل المساعد.',
+        AI_KEY_OR_REQUEST_INVALID: 'رفض Gemini المفتاح أو الطلب. تأكد أن المفتاح أُنشئ من Google AI Studio لمشروع مفعّل.',
+        AI_KEY_NOT_AUTHORIZED: 'المفتاح غير مخوّل لاستخدام Gemini API. راجع صلاحيات المفتاح والمشروع في Google AI Studio.',
+        AI_MODEL_UNAVAILABLE: 'نموذج Gemini المحدد غير متاح لهذا المشروع حالياً.',
+        AI_QUOTA_EXCEEDED: 'تم بلوغ حصة Gemini الحالية. حاول لاحقاً أو راجع الحصة والفوترة في Google AI Studio.',
+        AI_PROVIDER_UNAVAILABLE: 'خدمة Gemini غير متاحة حالياً. حاول مرة أخرى بعد قليل.',
+      };
+      setAnswer(data.answer || safeErrors[data.error] || 'تعذر الاتصال بالمساعد حالياً.');
     } catch (_) { setAnswer('تعذر الاتصال بالمساعد حالياً.'); }
     finally { setLoading(false); }
   };
