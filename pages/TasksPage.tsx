@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Task } from '../types';
+import { Task, getTaskAssigneeIds, getParticipantStatus } from '../types';
 import { PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants';
 import { Plus, Clock, Filter, ChevronRight, Search, Hourglass, MessageSquare, Bell, Trash2, Loader2, ArrowRightLeft, History } from 'lucide-react';
 import TaskModal from '../components/TaskModal';
@@ -16,7 +16,7 @@ const TasksPage = () => {
 
   const relevantTasks = tasks.filter(task => {
     if (currentUser?.role === 'MANAGER') return true;
-    return task.assigneeId === currentUser?.id || task.previousAssignees?.includes(currentUser?.id || '');
+    return getTaskAssigneeIds(task).includes(currentUser?.id || '') || task.previousAssignees?.includes(currentUser?.id || '');
   });
 
   const filteredTasks = relevantTasks.filter(t => {
@@ -24,7 +24,7 @@ const TasksPage = () => {
       const isTransferredFromMe = currentUser?.role === 'EMPLOYEE' && t.assigneeId !== currentUser.id && t.previousAssignees?.includes(currentUser.id);
       
       // We fake the status for the filter only
-      const effectiveStatus = isTransferredFromMe ? 'COMPLETED' : t.status;
+      const effectiveStatus = isTransferredFromMe ? 'COMPLETED' : currentUser?.role === 'EMPLOYEE' ? getParticipantStatus(t, currentUser.id) : t.status;
 
       const matchesStatus = statusFilter === 'ALL' || effectiveStatus === statusFilter;
       const matchesSearch = t.title.includes(searchQuery) || t.description.includes(searchQuery);
@@ -120,6 +120,8 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, assignee, onClick, currentUser 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const timeInfo = calculateTimeRemaining(task.dueDate);
+  const taskAssignees = getTaskAssigneeIds(task).map(id => users.find(u => u.id === id)).filter(Boolean);
+  const completedCount = getTaskAssigneeIds(task).filter(id => getParticipantStatus(task, id) === 'COMPLETED').length;
 
   // Check if transferred FROM me
   const isTransferredFromMe = currentUser?.role === 'EMPLOYEE' && task.assigneeId !== currentUser.id && task.previousAssignees?.includes(currentUser.id);
@@ -215,10 +217,12 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, assignee, onClick, currentUser 
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end pl-2 pt-4 md:pt-0 border-t md:border-t-0 border-slate-700 md:pl-12">
             <div className="flex items-center gap-3">
                 <div className="text-left hidden md:block">
-                    <p className="text-xs text-slate-300">{assignee?.name}</p>
-                    <p className="text-[10px] text-slate-500">{assignee?.department}</p>
+                    <p className="text-xs text-slate-300">{taskAssignees.length} مشاركين</p>
+                    <p className="text-[10px] text-slate-500">أنجز {completedCount} من {taskAssignees.length}</p>
                 </div>
-                <img src={assignee?.avatar} className="w-9 h-9 rounded-full border border-slate-600" alt="" />
+                <div className="flex -space-x-2 space-x-reverse">
+                  {taskAssignees.slice(0, 4).map((u: any) => <img key={u.id} src={u.avatar} title={u.name} className="w-9 h-9 rounded-full border-2 border-slate-800" alt={u.name} />)}
+                </div>
             </div>
             
             <div className="flex items-center gap-3">
