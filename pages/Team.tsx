@@ -34,9 +34,17 @@ const Team = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveUser = (u: User) => {
-    if (editingUser) updateUser(u);
-    else addUser(u);
+  const handleSaveUser = async (u: User) => {
+    if (editingUser) {
+      await updateUser(u);
+    } else {
+      const result = await addUser(u);
+      if (!result.success) {
+        alert(result.message || 'تعذر إنشاء حساب الموظف');
+        return;
+      }
+    }
+
     setIsModalOpen(false);
     setShowSuccessToast(true);
     setTimeout(() => setShowSuccessToast(false), 3000);
@@ -209,7 +217,7 @@ const Team = () => {
 interface UserFormModalProps {
     user: User | null;
     onClose: () => void;
-    onSave: (user: User) => void;
+    onSave: (user: User) => Promise<void>;
     onResetPassword?: (email: string) => void;
 }
 
@@ -221,7 +229,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
     const [avatar, setAvatar] = useState(user?.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`);
     const [password, setPassword] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const userData: User = {
             id: user?.id || `u_${Date.now()}`,
@@ -233,7 +241,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             // Only include password if it's a new user
             ...(password ? { password } : {})
         };
-        onSave(userData);
+        await onSave(userData);
     };
 
     return (
