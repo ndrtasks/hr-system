@@ -1,14 +1,14 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, getTaskAssigneeIds } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, getTaskAssigneeIds, getTaskLastActivityTime } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
 // Firebase Imports
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe, serverTimestamp } from 'firebase/firestore';
 
 // Google Gemini API
 import { GoogleGenAI } from "@google/genai";
@@ -144,8 +144,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
              // STRICT SORTING
              fetchedTasks.sort((a, b) => {
-                 const dateA = new Date(a.lastUpdated || 0).getTime();
-                 const dateB = new Date(b.lastUpdated || 0).getTime();
+                 const dateA = getTaskLastActivityTime(a);
+                 const dateB = getTaskLastActivityTime(b);
                  return dateB - dateA;
              });
              setTasks(fetchedTasks);
@@ -393,7 +393,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const lastUpdated = new Date().toISOString();
     if (isLiveMode && dbRef.current) {
         const { id, ...taskData } = task; 
-        await addDoc(collection(dbRef.current, 'tasks'), { ...taskData, lastUpdated });
+        await addDoc(collection(dbRef.current, 'tasks'), { ...taskData, lastUpdated: serverTimestamp() });
     } else {
         setTasks(prev => [task, ...prev]);
     }
@@ -423,7 +423,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const taskStatus: Status = allSubmitted ? 'PENDING_REVIEW' : 'IN_PROGRESS';
       const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أرسل ${currentUser.name} إنجازه لاعتماد المدير` : `أعاد ${currentUser.name} فتح الجزء الخاص به` };
       const updates = { participantStatuses, status: taskStatus, comments: [...task.comments, personalLog], lastUpdated };
-      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), updates);
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...updates, lastUpdated: serverTimestamp() });
       else setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
       if (status === 'COMPLETED' && task.createdBy !== currentUser.id) {
         createNotification(task.createdBy, 'إنجاز مشارك', `أكمل ${currentUser.name} دوره في: ${task.title}`, 'SUCCESS', task.id);
@@ -434,7 +434,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (isLiveMode && dbRef.current) {
         const taskRef = doc(dbRef.current, 'tasks', taskId);
-        await updateDoc(taskRef, { status, comments: [...(getTaskById(taskId)?.comments || []), statusLog], lastUpdated });
+        await updateDoc(taskRef, { status, comments: [...(getTaskById(taskId)?.comments || []), statusLog], lastUpdated: serverTimestamp() });
     } else {
         setTasks(prev => prev.map(t => t.id !== taskId ? t : { ...t, status, comments: [...t.comments, statusLog], lastUpdated }));
     }
@@ -470,7 +470,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           timestamp: lastUpdated
       };
       const updates = { participantStatuses, status: nextStatus, comments: [...task.comments, log], lastUpdated };
-      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), updates);
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...updates, lastUpdated: serverTimestamp() });
       else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...updates } : item));
       createNotification(participantId, approved ? 'تم اعتماد إنجازك' : 'تمت إعادة المهمة', approved ? `اعتمد المدير دورك في: ${task.title}` : `أعاد المدير دورك للتنفيذ في: ${task.title}`, approved ? 'SUCCESS' : 'WARNING', task.id);
       markTaskAsRead(taskId);
@@ -495,7 +495,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const lastUpdated = new Date().toISOString();
       const log: Comment = { id: `sys_edit_${Date.now()}`, userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true, content: 'قام المدير بتحديث بيانات المهمة', timestamp: lastUpdated };
       const payload = { ...updates, assigneeId: nextIds[0], assigneeIds: nextIds, participantStatuses, comments: [...task.comments, log], lastUpdated };
-      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), payload);
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...payload, lastUpdated: serverTimestamp() });
       else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...payload } as Task : item));
       addedIds.forEach(id => createNotification(id, 'تمت إضافتك إلى مهمة', `تمت إضافتك إلى: ${updates.title || task.title}`, 'INFO', task.id));
       removedIds.forEach(id => createNotification(id, 'تمت إزالتك من مهمة', `تمت إزالتك من: ${updates.title || task.title}`, 'WARNING', task.id));
@@ -522,7 +522,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               assigneeId: newAssigneeId,
               previousAssignees: updatedPreviousAssignees,
               comments: [...task.comments, sysComment],
-              lastUpdated // This triggers notification for everyone including old assignee
+              lastUpdated: serverTimestamp() // This triggers notification for everyone including old assignee
           });
       } else {
           setTasks(prev => prev.map(t => {
@@ -563,7 +563,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
          const taskRef = doc(dbRef.current, 'tasks', taskId);
          const task = getTaskById(taskId);
          if (task) {
-             await updateDoc(taskRef, { comments: [...task.comments, newComment], lastUpdated });
+             await updateDoc(taskRef, { comments: [...task.comments, newComment], lastUpdated: serverTimestamp() });
              markTaskAsRead(taskId);
 
              // Smart Notifications logic
@@ -591,7 +591,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
      const lastUpdated = new Date().toISOString();
      if (isLiveMode && dbRef.current) {
           const taskRef = doc(dbRef.current, 'tasks', taskId);
-          await updateDoc(taskRef, { extensionRequest, lastUpdated });
+          await updateDoc(taskRef, { extensionRequest, lastUpdated: serverTimestamp() });
      }
      markTaskAsRead(taskId);
      const task = getTaskById(taskId);
@@ -609,7 +609,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const taskRef = doc(dbRef.current, 'tasks', taskId);
           const task = getTaskById(taskId);
           if (task) {
-              const updates: any = { "extensionRequest.status": approved ? 'APPROVED' : 'REJECTED', comments: [...task.comments, sysComment], lastUpdated };
+              const updates: any = { "extensionRequest.status": approved ? 'APPROVED' : 'REJECTED', comments: [...task.comments, sysComment], lastUpdated: serverTimestamp() };
               if (approved && finalDate) updates.dueDate = finalDate;
               await updateDoc(taskRef, updates);
           }
