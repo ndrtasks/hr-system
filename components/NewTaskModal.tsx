@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Calendar, Users, Flag, Mail, Paperclip, FileText, Image as ImageIcon, Trash2, Check } from 'lucide-react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Task, Priority, Attachment } from '../types';
+import { Task, Priority, Attachment, isSuperAdminUser } from '../types';
 
 interface NewTaskModalProps {
   onClose: () => void;
@@ -21,7 +21,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const employees = users.filter(u => u.role === 'EMPLOYEE' && (!currentUser?.department || u.department === currentUser.department || currentUser.email === 'ndrtasks@gmail.com'));
+  const employees = users.filter(u => u.role === 'EMPLOYEE' && (isSuperAdminUser(currentUser) || u.department === currentUser?.department));
 
   const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
