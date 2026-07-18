@@ -93,11 +93,13 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
-      <div>
+      <div className="bg-gradient-to-l from-slate-900/60 to-transparent border-r-2 border-blue-500/40 pr-4 py-2 rounded-r-xl">
         <h1 className="text-2xl font-bold text-white mb-1">
           {currentUser?.role === 'MANAGER' ? 'نظرة عامة على النظام' : 'لوحة المعلومات'}
         </h1>
         <p className="text-slate-400 text-sm">مرحباً {currentUser?.name}، إليك ملخص الأداء اليوم.</p>
+        {currentUser?.jobTitle && <p className="text-blue-400 text-xs font-bold mt-1">{currentUser.jobTitle} • {currentUser.department}</p>}
+        {currentUser?.role === 'MANAGER' && <p className="text-slate-500 text-xs mt-2">قيادتك للفريق تصنع الفرق، نتمنى لك يومًا مليئًا بالإنجاز.</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
