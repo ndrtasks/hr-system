@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Task, getTaskAssigneeIds, getParticipantStatus, getTaskLastActivityTime } from '../types';
 import { PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants';
-import { Plus, Clock, Filter, ChevronRight, Search, Hourglass, MessageSquare, Bell, Trash2, Loader2, ArrowRightLeft, History } from 'lucide-react';
+import { Plus, Clock, Filter, ChevronRight, Search, Hourglass, MessageSquare, Bell, Trash2, Loader2, ArrowRightLeft, History, Building2 } from 'lucide-react';
 import TaskModal from '../components/TaskModal';
 import NewTaskModal from '../components/NewTaskModal';
 
@@ -215,6 +215,9 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, assignee, onClick, currentUser 
                         <span className="font-medium">{(task.status === 'COMPLETED' || isTransferredFromMe) ? task.dueDate : timeInfo.label}</span>
                     </span>
                     <span className={`text-[10px] px-2 py-1 rounded border ${PRIORITY_COLORS[task.priority]}`}>{task.priority === 'HIGH' ? 'أولوية عالية' : task.priority === 'MEDIUM' ? 'متوسطة' : 'منخفضة'}</span>
+                    <span className="text-[10px] px-2.5 py-1 rounded border border-violet-500/25 bg-violet-500/10 text-violet-300 flex items-center gap-1" title="القسم المرتبط بالمهمة">
+                      <Building2 size={12} /> {task.department}
+                    </span>
                 </div>
             </div>
         </div>
@@ -226,7 +229,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, assignee, onClick, currentUser 
                     <p className="text-[10px] text-slate-500">أنجز {completedCount} من {taskAssignees.length}</p>
                 </div>
                 <div className="flex -space-x-2 space-x-reverse">
-                  {taskAssignees.slice(0, 4).map((u: any) => <img key={u.id} src={u.avatar} title={u.name} className="w-9 h-9 rounded-full border-2 border-slate-800" alt={u.name} />)}
+                  {taskAssignees.slice(0, 4).map((u: any) => <img key={u.id} src={u.avatar} title={`${u.name} — ${u.jobTitle || (u.role === 'MANAGER' ? 'مدير قسم' : 'موظف')} — ${u.department}`} className="w-9 h-9 rounded-full border-2 border-slate-800" alt={u.name} />)}
                 </div>
             </div>
             
