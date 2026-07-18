@@ -8,7 +8,7 @@ import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 // Firebase Imports
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe } from 'firebase/firestore';
 
 // Google Gemini API
 import { GoogleGenAI } from "@google/genai";
@@ -86,6 +86,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const dbRef = useRef<any>(null);
   const authRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const dataUnsubscribersRef = useRef<Unsubscribe[]>([]);
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
@@ -118,12 +119,28 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setTasks([]);
           setNotifications([]); 
 
-          const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-             const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-             setUsers(fetchedUsers);
-          });
+          const subscribeToUserData = (profile: User) => {
+            dataUnsubscribersRef.current.forEach(unsubscribe => unsubscribe());
+            dataUnsubscribersRef.current = [];
 
-          const unsubTasks = onSnapshot(collection(db, 'tasks'), (snapshot) => {
+            const isManager = profile.role === 'MANAGER';
+            const usersSource = isManager
+              ? collection(db, 'users')
+              : query(collection(db, 'users'), where('department', '==', profile.department));
+            const tasksSource = isManager
+              ? collection(db, 'tasks')
+              : query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id));
+            const notificationsSource = query(collection(db, 'notifications'), where('userId', '==', profile.id));
+
+            const unsubUsers = onSnapshot(usersSource, (snapshot) => {
+              const fetchedUsers = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as User));
+              setUsers(fetchedUsers.length ? fetchedUsers : [profile]);
+            }, error => {
+              console.warn('تعذر تحميل أعضاء القسم', error);
+              setUsers([profile]);
+            });
+
+            const unsubTasks = onSnapshot(tasksSource, (snapshot) => {
              const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
              // STRICT SORTING
              fetchedTasks.sort((a, b) => {
@@ -132,13 +149,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  return dateB - dateA;
              });
              setTasks(fetchedTasks);
-          });
+            }, error => console.error('تعذر تحميل مهام المستخدم', error));
 
-          const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+            const unsubNotifications = onSnapshot(notificationsSource, (snapshot) => {
              const fetchedNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
              fetchedNotifs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
              setNotifications(fetchedNotifs);
-          });
+            }, error => console.warn('تعذر تحميل الإشعارات', error));
+
+            dataUnsubscribersRef.current = [unsubUsers, unsubTasks, unsubNotifications];
+          };
 
           onAuthStateChanged(auth, async (firebaseUser) => {
              if (firebaseUser) {
@@ -153,11 +173,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                    };
                    try { await setDoc(doc(db, 'users', firebaseUser.uid), adminUser, { merge: true }); } catch (e) {}
                    setCurrentUser(adminUser);
+                   subscribeToUserData(adminUser);
                } else {
                    try {
                        const docSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
                        if (docSnap.exists()) {
-                           setCurrentUser({ id: docSnap.id, ...docSnap.data() } as User);
+                           const profile = { id: docSnap.id, ...docSnap.data() } as User;
+                           setCurrentUser(profile);
+                           subscribeToUserData(profile);
                        } else {
                            const tempUser: User = {
                                id: firebaseUser.uid,
@@ -169,16 +192,19 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                            };
                            await setDoc(doc(db, 'users', firebaseUser.uid), tempUser);
                            setCurrentUser(tempUser);
+                           subscribeToUserData(tempUser);
                        }
                    } catch (e) {
-                       setCurrentUser({
+                       const fallbackProfile: User = {
                            id: firebaseUser.uid,
                            name: firebaseUser.email?.split('@')[0] || 'المستخدم',
                            email: firebaseUser.email || '',
                            role: 'EMPLOYEE',
                            avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email?.charAt(0)}`,
                            department: 'عام'
-                       });
+                       };
+                       setCurrentUser(fallbackProfile);
+                       subscribeToUserData(fallbackProfile);
                    }
                }
              } else {
@@ -187,9 +213,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
 
           return () => {
-            unsubUsers();
-            unsubTasks();
-            unsubNotifications();
+            dataUnsubscribersRef.current.forEach(unsubscribe => unsubscribe());
           };
 
         } catch (error) {
