@@ -36,7 +36,7 @@ const Dashboard = () => {
 
               if (myStatus === 'COMPLETED' || isTransferredFromMe) {
                   completedCount++;
-              } else if (myStatus === 'PENDING_APPROVAL') {
+              } else if (myStatus === 'PENDING_APPROVAL' || myStatus === 'PENDING_REOPEN') {
                   pendingCount++;
               } else if (t.status === 'IN_PROGRESS') {
                   inProgressCount++;
