@@ -84,6 +84,15 @@ export const getParticipantStatus = (task: Task, userId: string): ParticipantSta
   return 'IN_PROGRESS';
 };
 
+export const getTaskLastActivityTime = (task: Task): number => {
+  const timestamps = [
+    task.lastUpdated,
+    task.extensionRequest?.requestDate,
+    ...task.comments.map(comment => comment.timestamp)
+  ].filter(Boolean).map(value => new Date(value as string).getTime()).filter(Number.isFinite);
+  return timestamps.length ? Math.max(...timestamps) : 0;
+};
+
 export interface Notification {
   id: string;
   userId: string;
