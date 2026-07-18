@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar } from 'lucide-react';
+import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar, Loader2 } from 'lucide-react';
 import { User, Role, Task, Department, DepartmentTaskMigrationPlan, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
@@ -14,6 +14,7 @@ const Team = () => {
   const [historyUser, setHistoryUser] = useState<User | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const visibleUsers = [...users]
     .filter(user => departmentFilter === 'ALL' || user.department === departmentFilter)
     .sort((a, b) => a.department.localeCompare(b.department, 'ar') || (a.role === b.role ? a.name.localeCompare(b.name, 'ar') : a.role === 'MANAGER' ? -1 : 1));
@@ -28,10 +29,18 @@ const Team = () => {
       setIsHistoryOpen(true);
   };
 
-  const handleDeleteClick = (userId: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.')) {
-        deleteUser(userId);
-    }
+  const handleDeleteClick = async (user: User) => {
+    const assigned = tasks.filter(task => getTaskAssigneeIds(task).includes(user.id));
+    const sole = assigned.filter(task => getTaskAssigneeIds(task).length === 1).length;
+    const shared = assigned.length - sole;
+    const warning = `سيتم حذف حساب ${user.name} من تسجيل الدخول والنظام نهائيًا.\n\nالمهام الفردية التي ستُحذف: ${sole}\nالمهام المشتركة التي سيُزال منها: ${shared}\nكما ستُحذف إشعاراته وتُزال عضويته من المحادثات.\n\nاكتب البريد التالي للتأكيد:\n${user.email}`;
+    const entered = window.prompt(warning);
+    if (entered === null) return;
+    const confirmation = `حذف ${entered.trim()}`;
+    setDeletingUserId(user.id);
+    const result = await deleteUser(user.id, confirmation);
+    setDeletingUserId(null);
+    alert(result.message);
   };
 
   const handleAddNew = () => {
@@ -132,8 +141,8 @@ const Team = () => {
                                 <Edit2 size={14} />
                             </button>
                             {user.id !== currentUser.id && (
-                                <button onClick={() => handleDeleteClick(user.id)} className="p-1.5 bg-slate-700 text-red-400 rounded-lg hover:bg-slate-600" title="حذف">
-                                    <Trash2 size={14} />
+                                <button disabled={deletingUserId === user.id} onClick={() => handleDeleteClick(user)} className="p-1.5 bg-slate-700 text-red-400 rounded-lg hover:bg-slate-600 disabled:opacity-50" title="حذف الحساب بالكامل">
+                                    {deletingUserId === user.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                                 </button>
                             )}
                         </div>
