@@ -140,7 +140,7 @@ const Login = () => {
                                     value={recoveryEmail}
                                     onChange={(e) => setRecoveryEmail(e.target.value)}
                                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-1 focus:ring-amber-500 outline-none text-sm dir-ltr text-right placeholder-slate-500"
-                                    placeholder="ndrtasks@gmail.com"
+                                    placeholder="your-email@example.com"
                                     required
                                 />
                             </div>
@@ -183,7 +183,7 @@ const Login = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className={`w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-1 outline-none text-sm dir-ltr text-right placeholder-slate-500 ${view === 'MANAGER' ? 'focus:ring-amber-500' : 'focus:ring-blue-500'}`}
-                            placeholder={view === 'MANAGER' ? 'alf*****@hipit.edu.sa' : 'employee@company.com'}
+                            placeholder="your-email@example.com"
                             required
                             disabled={isLoading}
                         />
