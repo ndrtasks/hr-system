@@ -33,7 +33,7 @@ const Team = () => {
     const assigned = tasks.filter(task => getTaskAssigneeIds(task).includes(user.id));
     const sole = assigned.filter(task => getTaskAssigneeIds(task).length === 1).length;
     const shared = assigned.length - sole;
-    const warning = `سيتم حذف حساب ${user.name} من تسجيل الدخول والنظام نهائيًا.\n\nالمهام الفردية التي ستُحذف: ${sole}\nالمهام المشتركة التي سيُزال منها: ${shared}\nكما ستُحذف إشعاراته وتُزال عضويته من المحادثات.\n\nاكتب البريد التالي للتأكيد:\n${user.email}`;
+    // Confirmation is deliberately tied to the exact account email.\n    const warning = `سيتم حذف حساب ${user.name} من تسجيل الدخول والنظام نهائيًا.\n\nالمهام الفردية التي ستُحذف: ${sole}\nالمهام المشتركة التي سيُزال منها: ${shared}\nكما ستُحذف إشعاراته وتُزال عضويته من المحادثات.\n\nاكتب البريد التالي للتأكيد:\n${user.email}`;
     const entered = window.prompt(warning);
     if (entered === null) return;
     const confirmation = `حذف ${entered.trim()}`;
