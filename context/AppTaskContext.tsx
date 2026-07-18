@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, Department, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
@@ -31,7 +31,7 @@ interface TaskContextType {
   isLiveMode: boolean;
   taskReadStatus: Record<string, string>;
   login: (userId: string) => void;
-  loginWithCredentials: (email: string, pass: string, requiredRole?: Role) => Promise<{ success: boolean; message?: string }>;
+  loginWithCredentials: (email: string, pass: string, portal: LoginPortal) => Promise<{ success: boolean; message?: string }>;
   recoverPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
@@ -81,6 +81,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const authRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const dataUnsubscribersRef = useRef<Unsubscribe[]>([]);
+  const pendingLoginPortalRef = useRef<LoginPortal | null>(null);
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
@@ -172,6 +173,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           onAuthStateChanged(auth, async (firebaseUser) => {
              if (firebaseUser) {
                if (firebaseUser.email?.toLowerCase() === 'ndrtasks@gmail.com') {
+                   if (pendingLoginPortalRef.current && pendingLoginPortalRef.current !== 'SUPER_ADMIN') {
+                       await signOut(auth);
+                       setCurrentUser(null);
+                       return;
+                   }
                    const adminUser: User = {
                         id: firebaseUser.uid,
                         name: 'مدير النظام',
@@ -192,6 +198,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                            const profile = storedProfile.role === 'MANAGER' && !storedProfile.accessLevel
                              ? { ...storedProfile, accessLevel: 'DEPARTMENT_MANAGER' as const }
                              : storedProfile;
+                           const actualPortal: LoginPortal = profile.role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+                           if (pendingLoginPortalRef.current && pendingLoginPortalRef.current !== actualPortal) {
+                               await signOut(auth);
+                               setCurrentUser(null);
+                               return;
+                           }
                            setCurrentUser(profile);
                            subscribeToUserData(profile);
                        } else {
@@ -320,30 +332,33 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (user) setCurrentUser(user);
   };
 
-  const loginWithCredentials = async (email: string, pass: string, requiredRole?: Role): Promise<{ success: boolean; message?: string }> => {
+  const loginWithCredentials = async (email: string, pass: string, portal: LoginPortal): Promise<{ success: boolean; message?: string }> => {
     if (isLiveMode && authRef.current) {
+      pendingLoginPortalRef.current = portal;
       try {
-        await signInWithEmailAndPassword(authRef.current, email, pass);
+        const credential = await signInWithEmailAndPassword(authRef.current, email, pass);
+        const normalizedEmail = credential.user.email?.toLowerCase() || email.toLowerCase();
+        let actualPortal: LoginPortal;
+        if (normalizedEmail === 'ndrtasks@gmail.com') {
+            actualPortal = 'SUPER_ADMIN';
+        } else {
+            const profileSnapshot = await getDoc(doc(dbRef.current, 'users', credential.user.uid));
+            if (!profileSnapshot.exists()) {
+                await signOut(authRef.current);
+                return { success: false, message: 'لا يوجد ملف صلاحيات لهذا الحساب. راجع مدير النظام.' };
+            }
+            actualPortal = profileSnapshot.data().role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+        }
+        if (actualPortal !== portal) {
+            await signOut(authRef.current);
+            const portalNames = { SUPER_ADMIN: 'بوابة المدير العام', MANAGER: 'بوابة الإدارة', EMPLOYEE: 'بوابة الموظفين' };
+            return { success: false, message: `هذا الحساب مخصص لـ ${portalNames[actualPortal]}.` };
+        }
         return { success: true };
       } catch (error: any) {
-        if (error.code === 'auth/user-not-found' && email.toLowerCase() === 'ndrtasks@gmail.com') {
-            try {
-                const newUserCred = await createUserWithEmailAndPassword(authRef.current, email, pass);
-                const adminUser: User = {
-                    id: newUserCred.user.uid,
-                    name: 'مدير النظام',
-                    email: email,
-                    role: 'MANAGER',
-                    accessLevel: 'SUPER_ADMIN',
-                    avatar: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff',
-                    department: 'الإدارة العليا'
-                };
-                await setDoc(doc(dbRef.current, 'users', newUserCred.user.uid), adminUser);
-                setCurrentUser(adminUser);
-                return { success: true };
-            } catch (createError: any) { return { success: false, message: 'فشل إنشاء حساب المدير' }; }
-        }
         return { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+      } finally {
+        pendingLoginPortalRef.current = null;
       }
     }
     return { success: false, message: 'النظام غير متصل' };
