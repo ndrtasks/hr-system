@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Calendar, User, Flag, Mail, Paperclip, FileText, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { X, Calendar, Users, Flag, Mail, Paperclip, FileText, Image as ImageIcon, Trash2, Check } from 'lucide-react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Task, Priority, Attachment } from '../types';
 
@@ -13,7 +13,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [dueDate, setDueDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -21,7 +21,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const employees = users.filter(u => u.role === 'EMPLOYEE');
+  const employees = users.filter(u => u.role === 'EMPLOYEE' && (!currentUser?.department || u.department === currentUser.department || currentUser.email === 'ndrtasks@gmail.com'));
 
   const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
@@ -60,7 +60,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !assigneeId || !dueDate) return;
+    if (!title || assigneeIds.length === 0 || !dueDate) return;
+
+    const participantStatuses = Object.fromEntries(
+      assigneeIds.map(id => [id, { status: 'IN_PROGRESS' as const }])
+    );
 
     const newTask: Task = {
       id: `t_${Date.now()}`,
@@ -69,9 +73,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
       priority,
       status: 'IN_PROGRESS',
       dueDate,
-      assigneeId,
+      assigneeId: assigneeIds[0], // توافق مع المهام القديمة
+      assigneeIds,
+      participantStatuses,
       createdBy: currentUser?.id || '',
-      department: users.find(u => u.id === assigneeId)?.department || 'General',
+      department: currentUser?.department || users.find(u => u.id === assigneeIds[0])?.department || 'General',
       isRecurring,
       lastUpdated: new Date().toISOString(), // Set initial lastUpdated for sorting
       comments: [
@@ -166,21 +172,22 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">إسناد إلى</label>
-              <div className="relative">
-                <User className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <select 
-                  value={assigneeId}
-                  onChange={(e) => setAssigneeId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg pr-10 pl-4 py-2.5 text-white appearance-none focus:ring-1 focus:ring-blue-500 outline-none"
-                  required
-                >
-                  <option value="">اختر موظف</option>
-                  {employees.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">إسناد إلى موظف أو أكثر</label>
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-2 max-h-36 overflow-y-auto space-y-1">
+                {employees.length === 0 && <p className="text-xs text-slate-500 p-2">لا يوجد موظفون في هذا القسم</p>}
+                {employees.map(u => {
+                  const selected = assigneeIds.includes(u.id);
+                  return (
+                    <button key={u.id} type="button"
+                      onClick={() => setAssigneeIds(prev => selected ? prev.filter(id => id !== u.id) : [...prev, u.id])}
+                      className={`w-full flex items-center justify-between rounded-md px-2.5 py-2 text-sm ${selected ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:bg-slate-700'}`}>
+                      <span className="flex items-center gap-2"><Users size={15} />{u.name}</span>
+                      {selected && <Check size={16} />}
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">تم اختيار {assigneeIds.length} موظف</p>
             </div>
 
              <div>
