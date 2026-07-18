@@ -103,6 +103,7 @@ export interface Task {
   participantStatuses?: Record<string, ParticipantProgress>;
   createdBy: string;
   department: string;
+  departments?: string[];
   comments: Comment[];
   attachments?: Attachment[];
   isRecurring: boolean;
