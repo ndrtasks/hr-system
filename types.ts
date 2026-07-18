@@ -10,6 +10,30 @@ export interface Department {
   createdAt?: any;
 }
 
+export type ConversationType = 'DIRECT' | 'GROUP' | 'ANNOUNCEMENT';
+
+export interface Conversation {
+  id: string;
+  title: string;
+  type: ConversationType;
+  participantIds: string[];
+  createdBy: string;
+  createdAt: any;
+  lastMessage?: string;
+  lastUpdated: any;
+}
+
+export interface CommunicationMessage {
+  id: string;
+  conversationId: string;
+  participantIds: string[];
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: any;
+  readBy: string[];
+}
+
 export interface User {
   id: string;
   name: string;
