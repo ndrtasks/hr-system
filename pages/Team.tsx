@@ -15,6 +15,8 @@ const Team = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const visibleUsers = [...users]
     .filter(user => departmentFilter === 'ALL' || user.department === departmentFilter)
     .sort((a, b) => a.department.localeCompare(b.department, 'ar') || (a.role === b.role ? a.name.localeCompare(b.name, 'ar') : a.role === 'MANAGER' ? -1 : 1));
@@ -29,17 +31,20 @@ const Team = () => {
       setIsHistoryOpen(true);
   };
 
-  const handleDeleteClick = async (user: User) => {
-    const assigned = tasks.filter(task => getTaskAssigneeIds(task).includes(user.id));
-    const sole = assigned.filter(task => getTaskAssigneeIds(task).length === 1).length;
-    const shared = assigned.length - sole;
-    // Confirmation is deliberately tied to the exact account email.\n    const warning = `سيتم حذف حساب ${user.name} من تسجيل الدخول والنظام نهائيًا.\n\nالمهام الفردية التي ستُحذف: ${sole}\nالمهام المشتركة التي سيُزال منها: ${shared}\nكما ستُحذف إشعاراته وتُزال عضويته من المحادثات.\n\nاكتب البريد التالي للتأكيد:\n${user.email}`;
-    const entered = window.prompt(warning);
-    if (entered === null) return;
-    const confirmation = `حذف ${entered.trim()}`;
-    setDeletingUserId(user.id);
-    const result = await deleteUser(user.id, confirmation);
+  const handleDeleteClick = (user: User) => {
+    setDeleteTarget(user);
+    setDeleteConfirmation('');
+  };
+
+  const confirmAccountDeletion = async () => {
+    if (!deleteTarget || deleteConfirmation.trim() !== deleteTarget.email) return;
+    setDeletingUserId(deleteTarget.id);
+    const result = await deleteUser(deleteTarget.id, `حذف ${deleteConfirmation.trim()}`);
     setDeletingUserId(null);
+    if (result.success) {
+      setDeleteTarget(null);
+      setDeleteConfirmation('');
+    }
     alert(result.message);
   };
 
@@ -235,6 +240,43 @@ const Team = () => {
             onClose={() => setIsHistoryOpen(false)}
           />
       )}
+
+      {deleteTarget && (() => {
+        const assigned = tasks.filter(task => getTaskAssigneeIds(task).includes(deleteTarget.id));
+        const sole = assigned.filter(task => getTaskAssigneeIds(task).length === 1).length;
+        const shared = assigned.length - sole;
+        const isDeleting = deletingUserId === deleteTarget.id;
+        const isConfirmed = deleteConfirmation.trim() === deleteTarget.email;
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" dir="rtl">
+            <div className="bg-slate-900 w-full max-w-lg rounded-2xl border border-red-500/30 shadow-2xl overflow-hidden">
+              <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div><h2 className="text-lg font-bold text-white">حذف الحساب نهائيًا</h2><p className="text-xs text-red-300 mt-1">سيُحذف الحساب من النظام ومن تسجيل الدخول في Firebase.</p></div>
+                <button disabled={isDeleting} onClick={() => setDeleteTarget(null)} className="text-slate-500 hover:text-white disabled:opacity-50"><X size={20}/></button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 text-sm text-slate-300 space-y-2">
+                  <p><span className="text-slate-500">الحساب:</span> <strong className="text-white">{deleteTarget.name}</strong></p>
+                  <p>المهام الفردية التي ستُحذف: <strong className="text-white">{sole}</strong></p>
+                  <p>المهام المشتركة التي سيُزال منها: <strong className="text-white">{shared}</strong></p>
+                  <p className="text-xs text-slate-400">ستُحذف إشعاراته وتُزال عضويته من المحادثات أيضًا.</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-2">للتأكيد اكتب البريد التالي كما هو:</label>
+                  <div className="text-sm text-red-300 mb-2 select-all" dir="ltr">{deleteTarget.email}</div>
+                  <input autoFocus type="email" value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} placeholder="اكتب بريد الحساب" dir="ltr" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"/>
+                </div>
+              </div>
+              <div className="p-5 border-t border-slate-800 flex gap-3">
+                <button disabled={isDeleting} onClick={() => setDeleteTarget(null)} className="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-50">إلغاء</button>
+                <button disabled={!isConfirmed || isDeleting} onClick={confirmAccountDeletion} className="mr-auto px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+                  {isDeleting ? <><Loader2 size={16} className="animate-spin"/> جارٍ الحذف...</> : <><Trash2 size={16}/> حذف الحساب نهائيًا</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
