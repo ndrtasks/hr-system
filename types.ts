@@ -13,6 +13,12 @@ export interface User {
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type Status = 'NEW' | 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'LATE';
+export type ParticipantStatus = 'IN_PROGRESS' | 'COMPLETED';
+
+export interface ParticipantProgress {
+  status: ParticipantStatus;
+  completedAt?: string;
+}
 
 export interface Attachment {
   id: string;
@@ -48,6 +54,8 @@ export interface Task {
   status: Status;
   dueDate: string;
   assigneeId: string;
+  assigneeIds?: string[];
+  participantStatuses?: Record<string, ParticipantProgress>;
   createdBy: string;
   department: string;
   comments: Comment[];
@@ -57,6 +65,17 @@ export interface Task {
   lastUpdated?: string; // تاريخ آخر نشاط (للترتيب)
   previousAssignees?: string[]; // قائمة الموظفين السابقين الذين استلموا المهمة
 }
+
+export const getTaskAssigneeIds = (task: Task): string[] => {
+  if (task.assigneeIds?.length) return task.assigneeIds;
+  return task.assigneeId ? [task.assigneeId] : [];
+};
+
+export const getParticipantStatus = (task: Task, userId: string): ParticipantStatus => {
+  const saved = task.participantStatuses?.[userId]?.status;
+  if (saved) return saved;
+  return task.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS';
+};
 
 export interface Notification {
   id: string;
