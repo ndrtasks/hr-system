@@ -81,7 +81,7 @@ const SettingsPage = () => {
 
   const handleSave = () => {
       toggleLeaderboardVisibility(localShowLeaderboard);
-      simulateEmail(currentUser.email, 'تم تحديث إعدادات النظام');
+      if (currentUser) simulateEmail(currentUser.email, 'تم تحديث إعدادات النظام');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
   };
