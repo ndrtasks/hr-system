@@ -48,6 +48,7 @@ interface TaskContextType {
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
   resolveParticipantCompletion: (taskId: string, participantId: string, approved: boolean) => Promise<void>;
+  updateTaskDetails: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskAssignee: (taskId: string, newAssigneeId: string) => Promise<void>;
   sendTaskReminder: (taskId: string) => Promise<void>;
@@ -483,6 +484,24 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
+  const updateTaskDetails = async (taskId: string, updates: Partial<Task>) => {
+      const task = getTaskById(taskId);
+      if (!task || currentUser?.role !== 'MANAGER') return;
+      const previousIds = getTaskAssigneeIds(task);
+      const nextIds = updates.assigneeIds?.length ? updates.assigneeIds : previousIds;
+      const participantStatuses = Object.fromEntries(nextIds.map(id => [id, task.participantStatuses?.[id] || { status: 'IN_PROGRESS' }]));
+      const addedIds = nextIds.filter(id => !previousIds.includes(id));
+      const removedIds = previousIds.filter(id => !nextIds.includes(id));
+      const lastUpdated = new Date().toISOString();
+      const log: Comment = { id: `sys_edit_${Date.now()}`, userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true, content: 'قام المدير بتحديث بيانات المهمة', timestamp: lastUpdated };
+      const payload = { ...updates, assigneeId: nextIds[0], assigneeIds: nextIds, participantStatuses, comments: [...task.comments, log], lastUpdated };
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), payload);
+      else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...payload } as Task : item));
+      addedIds.forEach(id => createNotification(id, 'تمت إضافتك إلى مهمة', `تمت إضافتك إلى: ${updates.title || task.title}`, 'INFO', task.id));
+      removedIds.forEach(id => createNotification(id, 'تمت إزالتك من مهمة', `تمت إزالتك من: ${updates.title || task.title}`, 'WARNING', task.id));
+      markTaskAsRead(taskId);
+  };
+
   const updateTaskAssignee = async (taskId: string, newAssigneeId: string) => {
       const task = getTaskById(taskId);
       if(!task) return;
@@ -676,7 +695,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <TaskContext.Provider value={{ 
         tasks, users, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
         login, loginWithCredentials, recoverPassword, logout, 
-        addTask, updateTaskStatus, resolveParticipantCompletion, addComment, getTaskById, deleteTask, updateTaskAssignee,
+        addTask, updateTaskStatus, resolveParticipantCompletion, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
