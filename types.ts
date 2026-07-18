@@ -50,6 +50,9 @@ export interface User {
   jobTitle?: string;
 }
 
+// عند نقل المستخدم بين الأقسام: قيمة KEEP تبقي المهمة معه، وأي UID آخر ينقل دوره لذلك المستخدم.
+export type DepartmentTaskMigrationPlan = Record<string, 'KEEP' | string>;
+
 export const isManagerUser = (user?: User | null) => user?.role === 'MANAGER';
 export const isSuperAdminUser = (user?: User | null) => user?.role === 'MANAGER' && user?.accessLevel === 'SUPER_ADMIN';
 
