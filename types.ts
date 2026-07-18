@@ -1,5 +1,13 @@
 
 export type Role = 'MANAGER' | 'EMPLOYEE';
+export type AccessLevel = 'SUPER_ADMIN' | 'DEPARTMENT_MANAGER';
+
+export interface Department {
+  id: string;
+  name: string;
+  managerId?: string;
+  createdAt?: any;
+}
 
 export interface User {
   id: string;
@@ -7,9 +15,15 @@ export interface User {
   email: string;
   password?: string;
   role: Role;
+  accessLevel?: AccessLevel;
   avatar: string;
   department: string;
+  departmentId?: string;
+  managerId?: string;
 }
+
+export const isManagerUser = (user?: User | null) => user?.role === 'MANAGER';
+export const isSuperAdminUser = (user?: User | null) => user?.role === 'MANAGER' && user?.accessLevel === 'SUPER_ADMIN';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type Status = 'NEW' | 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'LATE';
