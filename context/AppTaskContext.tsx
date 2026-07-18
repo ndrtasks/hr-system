@@ -48,6 +48,7 @@ interface TaskContextType {
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
   resolveParticipantCompletion: (taskId: string, participantId: string, approved: boolean) => Promise<void>;
+  resolveParticipantReopen: (taskId: string, participantId: string, approved: boolean) => Promise<void>;
   updateTaskDetails: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskAssignee: (taskId: string, newAssigneeId: string) => Promise<void>;
@@ -413,15 +414,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // الموظف يحدّث إنجازه الشخصي فقط، بدون التأثير على بقية المشاركين.
     if (currentUser.role === 'EMPLOYEE' && getTaskAssigneeIds(task).includes(currentUser.id)) {
+      const currentParticipantStatus = getParticipantStatus(task, currentUser.id);
+      const requestingReopen = status === 'IN_PROGRESS' && currentParticipantStatus === 'COMPLETED';
       const participantStatuses = {
         ...(task.participantStatuses || {}),
         [currentUser.id]: {
-          status: status === 'COMPLETED' ? 'PENDING_APPROVAL' as const : 'IN_PROGRESS' as const
+          status: status === 'COMPLETED' ? 'PENDING_APPROVAL' as const : requestingReopen ? 'PENDING_REOPEN' as const : 'IN_PROGRESS' as const
         }
       };
       const allSubmitted = getTaskAssigneeIds(task).every(id => ['PENDING_APPROVAL', 'COMPLETED'].includes(participantStatuses[id]?.status));
       const taskStatus: Status = allSubmitted ? 'PENDING_REVIEW' : 'IN_PROGRESS';
-      const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أرسل ${currentUser.name} إنجازه لاعتماد المدير` : `أعاد ${currentUser.name} فتح الجزء الخاص به` };
+      const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أرسل ${currentUser.name} إنجازه لاعتماد المدير` : requestingReopen ? `طلب ${currentUser.name} إعادة فتح دوره` : `سحب ${currentUser.name} طلب الاعتماد` };
       const updates = { participantStatuses, status: taskStatus, comments: [...task.comments, personalLog], lastUpdated };
       if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...updates, lastUpdated: serverTimestamp() });
       else setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
@@ -473,6 +476,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...updates, lastUpdated: serverTimestamp() });
       else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...updates } : item));
       createNotification(participantId, approved ? 'تم اعتماد إنجازك' : 'تمت إعادة المهمة', approved ? `اعتمد المدير دورك في: ${task.title}` : `أعاد المدير دورك للتنفيذ في: ${task.title}`, approved ? 'SUCCESS' : 'WARNING', task.id);
+      markTaskAsRead(taskId);
+  };
+
+  const resolveParticipantReopen = async (taskId: string, participantId: string, approved: boolean) => {
+      const task = getTaskById(taskId);
+      if (!task || currentUser?.role !== 'MANAGER') return;
+      const participant = users.find(user => user.id === participantId);
+      const lastUpdated = new Date().toISOString();
+      const participantStatuses = {
+          ...(task.participantStatuses || {}),
+          [participantId]: approved
+            ? { status: 'IN_PROGRESS' as const }
+            : { status: 'COMPLETED' as const, completedAt: task.participantStatuses?.[participantId]?.completedAt || lastUpdated, approvedById: currentUser.id }
+      };
+      const nextStatus: Status = approved ? 'IN_PROGRESS' : task.status;
+      const log: Comment = { id: `sys_reopen_${Date.now()}`, userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true, content: approved ? `وافق المدير على إعادة فتح دور ${participant?.name || 'الموظف'}` : `رفض المدير إعادة فتح دور ${participant?.name || 'الموظف'}`, timestamp: lastUpdated };
+      const updates = { participantStatuses, status: nextStatus, comments: [...task.comments, log], lastUpdated };
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), { ...updates, lastUpdated: serverTimestamp() });
+      else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...updates } : item));
+      createNotification(participantId, approved ? 'تمت الموافقة على إعادة الفتح' : 'تم رفض إعادة الفتح', `${approved ? 'وافق' : 'رفض'} المدير طلبك في: ${task.title}`, approved ? 'SUCCESS' : 'WARNING', task.id);
       markTaskAsRead(taskId);
   };
 
@@ -695,7 +718,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <TaskContext.Provider value={{ 
         tasks, users, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
         login, loginWithCredentials, recoverPassword, logout, 
-        addTask, updateTaskStatus, resolveParticipantCompletion, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
+        addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
