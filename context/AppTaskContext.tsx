@@ -421,7 +421,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const createNotification = async (userId: string, title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING', taskId?: string, conversationId?: string) => {
     const newNotif: Notification = { id: `n_${Date.now()}`, userId, title, message, type, read: false, timestamp: new Date().toISOString(), taskId, conversationId };
     if (isLiveMode && dbRef.current) {
-        const { id, ...notifData } = newNotif;
+        const notifData: Omit<Notification, 'id'> = { userId, title, message, type, read: false, timestamp: newNotif.timestamp };
+        if (taskId) notifData.taskId = taskId;
+        if (conversationId) notifData.conversationId = conversationId;
         await addDoc(collection(dbRef.current, 'notifications'), notifData);
     }
   };
