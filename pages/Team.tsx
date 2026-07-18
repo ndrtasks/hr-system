@@ -2,22 +2,21 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar } from 'lucide-react';
-import { User, Role, Task, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
+import { User, Role, Task, Department, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
 const Team = () => {
   const { users, departments, currentUser, addUser, updateUser, deleteUser, tasks, recoverPassword } = useTaskContext();
   const isSuperAdmin = isSuperAdminUser(currentUser);
-  const availableDepartments = Array.from(new Set([
-      ...departments.map(department => department.name),
-      ...users.map(user => user.department),
-      currentUser?.department || ''
-  ].filter(Boolean)));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [historyUser, setHistoryUser] = useState<User | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const visibleUsers = [...users]
+    .filter(user => departmentFilter === 'ALL' || user.department === departmentFilter)
+    .sort((a, b) => a.department.localeCompare(b.department, 'ar') || (a.role === b.role ? a.name.localeCompare(b.name, 'ar') : a.role === 'MANAGER' ? -1 : 1));
 
   const handleEditClick = (user: User) => {
     setEditingUser(user);
@@ -106,8 +105,10 @@ const Team = () => {
         )}
       </div>
 
+      {isSuperAdmin && <div className="mb-6 bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3"><span className="text-xs text-slate-400">عرض الهيكل حسب القسم</span><select value={departmentFilter} onChange={event => setDepartmentFilter(event.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none"><option value="ALL">جميع الأقسام</option>{departments.map(department => <option key={department.id} value={department.name}>{department.name}</option>)}</select><span className="text-[11px] text-slate-500 sm:mr-auto">يظهر مدير كل قسم أولًا ثم موظفوه</span></div>}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((user) => {
+        {visibleUsers.map((user) => {
           const stats = getUserStats(user.id);
           return (
             <div key={user.id} className="bg-slate-800 rounded-xl p-0 border border-slate-700 group relative hover:border-slate-500 transition-all overflow-hidden flex flex-col">
@@ -139,6 +140,7 @@ const Team = () => {
                     </div>
                     
                     <h3 className="text-lg font-bold text-white mb-1">{user.name}</h3>
+                    <p className="text-xs text-slate-400 mb-2">{user.jobTitle || (user.role === 'MANAGER' ? `مدير ${user.department}` : 'موظف')}</p>
                     <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs text-blue-400 font-medium bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                             {user.department}
@@ -207,7 +209,7 @@ const Team = () => {
             onSave={handleSaveUser} 
             onResetPassword={handleResetPassword}
             currentUser={currentUser}
-            departments={availableDepartments}
+            departments={departments}
           />
       )}
 
@@ -228,17 +230,18 @@ interface UserFormModalProps {
     onSave: (user: User) => Promise<void>;
     onResetPassword?: (email: string) => void;
     currentUser: User;
-    departments: string[];
+    departments: Department[];
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword, currentUser, departments }) => {
     const isSuperAdmin = isSuperAdminUser(currentUser);
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
-    const [department, setDepartment] = useState(user?.department || (isSuperAdmin ? departments[0] || '' : currentUser.department));
+    const [department, setDepartment] = useState(user?.department || (isSuperAdmin ? departments[0]?.name || '' : currentUser.department));
     const [role, setRole] = useState<Role>(isSuperAdmin ? user?.role || 'EMPLOYEE' : 'EMPLOYEE');
     const [avatar, setAvatar] = useState(user?.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`);
     const [password, setPassword] = useState('');
+    const [jobTitle, setJobTitle] = useState(user?.jobTitle || (role === 'MANAGER' ? `مدير ${department}` : ''));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -250,6 +253,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             role: isSuperAdmin ? role : 'EMPLOYEE',
             accessLevel: isSuperAdmin && role === 'MANAGER' ? 'DEPARTMENT_MANAGER' : undefined,
             avatar,
+            jobTitle: jobTitle.trim(),
+            departmentId: isSuperAdmin ? departments.find(item => item.name === department)?.id || user?.departmentId : currentUser.departmentId,
             // Only include password if it's a new user
             ...(password ? { password } : {})
         };
@@ -285,6 +290,13 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
                             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none"
                             placeholder="employee@company.com"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">المسمى الوظيفي</label>
+                        <input type="text" required value={jobTitle} onChange={e => setJobTitle(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder={role === 'MANAGER' ? 'مثال: مدير إدارة الموارد البشرية' : 'مثال: أخصائي موارد بشرية'} />
                     </div>
 
                     {!user ? (
@@ -345,8 +357,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
                             <select required value={department} onChange={e => setDepartment(e.target.value)} disabled={!isSuperAdmin}
                                 className="w-full bg-slate-800 disabled:opacity-70 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none">
                                 {!departments.length && <option value="">أنشئ قسمًا من الإعدادات أولًا</option>}
-                                {departments.map(name => <option key={name} value={name}>{name}</option>)}
+                                {departments.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
                             </select>
+                            {!isSuperAdmin && <p className="text-[10px] text-emerald-400 mt-1.5">سيُربط الموظف تلقائيًا بقسمك</p>}
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-slate-400 mb-1.5">الصلاحية</label>
