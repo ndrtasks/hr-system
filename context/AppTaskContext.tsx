@@ -76,10 +76,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   
-  const [taskReadStatus, setTaskReadStatus] = useState<Record<string, string>>(() => {
-      const saved = localStorage.getItem('taskReadStatus');
-      return saved ? JSON.parse(saved) : {};
-  });
+  // حالة القراءة مستقلة لكل حساب حتى لو استخدم أكثر من مستخدم نفس الجهاز.
+  const [taskReadStatus, setTaskReadStatus] = useState<Record<string, string>>({});
   
   const [isLiveMode, setIsLiveMode] = useState(false);
   
@@ -238,6 +236,19 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   }, [notifications, currentUser]);
 
+  useEffect(() => {
+      if (!currentUser) {
+          setTaskReadStatus({});
+          return;
+      }
+      const saved = localStorage.getItem(`taskReadStatus:${currentUser.id}`);
+      try {
+          setTaskReadStatus(saved ? JSON.parse(saved) : {});
+      } catch (_) {
+          setTaskReadStatus({});
+      }
+  }, [currentUser?.id]);
+
   const playSound = () => {
     if (audioRef.current) {
       audioRef.current.volume = 0.5;
@@ -367,10 +378,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const markTaskAsRead = (taskId: string) => {
+      if (!currentUser) return;
       const now = new Date().toISOString();
-      const updatedStatus = { ...taskReadStatus, [taskId]: now };
-      setTaskReadStatus(updatedStatus);
-      localStorage.setItem('taskReadStatus', JSON.stringify(updatedStatus));
+      setTaskReadStatus(previous => {
+          const updatedStatus = { ...previous, [taskId]: now };
+          localStorage.setItem(`taskReadStatus:${currentUser.id}`, JSON.stringify(updatedStatus));
+          return updatedStatus;
+      });
   };
 
   const addTask = async (task: Task) => {
