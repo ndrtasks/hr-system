@@ -255,9 +255,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
     const activeDepartmentTasks = user
         ? tasks.filter(task => task.status !== 'COMPLETED' && getTaskAssigneeIds(task).includes(user.id))
         : [];
-    const oldDepartmentCandidates = user
-        ? users.filter(candidate => candidate.id !== user.id && candidate.department === user.department && !isSuperAdminUser(candidate))
-        : [];
+    const candidatesForTask = (task: Task) => users.filter(candidate =>
+        candidate.id !== user?.id
+        && !isSuperAdminUser(candidate)
+        && (candidate.department === task.department || task.departments?.includes(candidate.department))
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -274,7 +276,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             // Only include password if it's a new user
             ...(password ? { password } : {})
         };
-        if (user && user.department !== userData.department && activeDepartmentTasks.length) {
+        const hasTasksFromPreviousDepartment = activeDepartmentTasks.some(task =>
+            task.department !== userData.department && !task.departments?.includes(userData.department)
+        );
+        if (user && activeDepartmentTasks.length && (user.department !== userData.department || hasTasksFromPreviousDepartment)) {
             setPendingUser(userData);
             setMigrationPlan(Object.fromEntries(activeDepartmentTasks.map(task => [task.id, 'KEEP'])));
             return;
@@ -291,7 +296,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden" dir="rtl">
                 <div className="p-5 border-b border-slate-800 flex items-start justify-between gap-4">
-                    <div><h2 className="text-lg font-bold text-white">معالجة المهام عند تغيير القسم</h2><p className="text-xs text-slate-400 mt-1">سينتقل {user.name} من {user.department} إلى {pendingUser.department}. اختر ما يحدث لدوره في كل مهمة نشطة.</p></div>
+                    <div><h2 className="text-lg font-bold text-white">معالجة مهام القسم السابق</h2><p className="text-xs text-slate-400 mt-1">{user.department !== pendingUser.department ? `سينتقل ${user.name} من ${user.department} إلى ${pendingUser.department}. ` : ''}اختر ما يحدث لدوره في كل مهمة نشطة.</p></div>
                     <button onClick={() => setPendingUser(null)} className="text-slate-500 hover:text-white"><X size={20}/></button>
                 </div>
                 <div className="p-5 space-y-3 max-h-[55vh] overflow-y-auto">
@@ -299,10 +304,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
                         <div className="mb-3"><p className="font-bold text-white text-sm">{task.title}</p><p className="text-[11px] text-slate-500 mt-1">{task.department} • المهام المكتملة لا تتأثر بهذا الإجراء</p></div>
                         <select value={migrationPlan[task.id] || 'KEEP'} onChange={event => setMigrationPlan(previous => ({ ...previous, [task.id]: event.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500">
                             <option value="KEEP">إبقاء المهمة معه حتى ينهيها</option>
-                            {oldDepartmentCandidates.map(candidate => <option key={candidate.id} value={candidate.id}>نقل دوره إلى: {candidate.name} — {candidate.jobTitle || (candidate.role === 'MANAGER' ? 'مدير قسم' : 'موظف')}</option>)}
+                            {candidatesForTask(task).map(candidate => <option key={candidate.id} value={candidate.id}>نقل دوره إلى: {candidate.name} — {candidate.jobTitle || (candidate.role === 'MANAGER' ? 'مدير قسم' : 'موظف')} — {candidate.department}</option>)}
                         </select>
+                        {!candidatesForTask(task).length && <p className="text-[11px] text-amber-300 mt-2">لا يوجد عضو آخر في قسم هذه المهمة؛ أبقها معه حاليًا.</p>}
                     </div>)}
-                    {!oldDepartmentCandidates.length && <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">لا يوجد عضو آخر في القسم السابق لنقل المهام إليه؛ يمكنك إبقاء المهام مع المستخدم حاليًا.</p>}
                 </div>
                 <div className="p-5 border-t border-slate-800 flex flex-col-reverse sm:flex-row gap-3">
                     <button onClick={() => setPendingUser(null)} className="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-300">رجوع للتعديل</button>
