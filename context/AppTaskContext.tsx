@@ -122,11 +122,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const usersSource = isSuperAdmin
               ? collection(db, 'users')
               : query(collection(db, 'users'), where('department', '==', profile.department));
-            const tasksSource = isSuperAdmin
-              ? collection(db, 'tasks')
+            const taskSources = isSuperAdmin
+              ? [collection(db, 'tasks')]
               : isManager
-                ? query(collection(db, 'tasks'), where('department', '==', profile.department))
-                : query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id));
+                ? [query(collection(db, 'tasks'), where('department', '==', profile.department))]
+                : [
+                    query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id)),
+                    query(collection(db, 'tasks'), where('assigneeId', '==', profile.id))
+                  ];
             const notificationsSource = query(collection(db, 'notifications'), where('userId', '==', profile.id));
 
             const unsubUsers = onSnapshot(usersSource, (snapshot) => {
@@ -137,16 +140,18 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               setUsers([profile]);
             });
 
-            const unsubTasks = onSnapshot(tasksSource, (snapshot) => {
-             const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-             // STRICT SORTING
-             fetchedTasks.sort((a, b) => {
-                 const dateA = getTaskLastActivityTime(a);
-                 const dateB = getTaskLastActivityTime(b);
-                 return dateB - dateA;
-             });
-             setTasks(fetchedTasks);
-            }, error => console.error('تعذر تحميل مهام المستخدم', error));
+            const taskSnapshots = new Map<number, Task[]>();
+            const publishTasks = () => {
+                const uniqueTasks = new Map<string, Task>();
+                taskSnapshots.forEach(items => items.forEach(task => uniqueTasks.set(task.id, task)));
+                const fetchedTasks = Array.from(uniqueTasks.values());
+                fetchedTasks.sort((a, b) => getTaskLastActivityTime(b) - getTaskLastActivityTime(a));
+                setTasks(fetchedTasks);
+            };
+            const unsubTasks = taskSources.map((source, index) => onSnapshot(source, snapshot => {
+                taskSnapshots.set(index, snapshot.docs.map(item => ({ id: item.id, ...item.data() } as Task)));
+                publishTasks();
+            }, error => console.error('تعذر تحميل مهام المستخدم', error)));
 
             const unsubNotifications = onSnapshot(notificationsSource, (snapshot) => {
              const fetchedNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
@@ -161,7 +166,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setDepartments(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as Department)));
             }, error => console.warn('تعذر تحميل الأقسام', error));
 
-            dataUnsubscribersRef.current = [unsubUsers, unsubTasks, unsubNotifications, unsubDepartments];
+            dataUnsubscribersRef.current = [unsubUsers, ...unsubTasks, unsubNotifications, unsubDepartments];
           };
 
           onAuthStateChanged(auth, async (firebaseUser) => {
@@ -788,7 +793,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <TaskContext.Provider value={{ 
         tasks, users, departments, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
-        login, loginWithCredentials, recoverPassword, changePassword, logout, 
+        login, loginWithCredentials, recoverPassword, changePassword, logout,
         addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, addDepartment, updateDepartment, deleteDepartment, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
