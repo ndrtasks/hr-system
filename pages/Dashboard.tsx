@@ -4,13 +4,14 @@ import { useTaskContext } from '../context/AppTaskContext';
 import { CheckCircle, Clock, AlertCircle, TrendingUp, Users, Activity, BarChart2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { STATUS_COLORS, PRIORITY_COLORS } from '../constants';
+import { getTaskAssigneeIds, getParticipantStatus } from '../types';
 
 const Dashboard = () => {
   const { tasks, currentUser, users, showLeaderboard } = useTaskContext();
 
   const relevantTasks = tasks.filter(task => {
     if (currentUser?.role === 'MANAGER') return true;
-    return task.assigneeId === currentUser?.id || task.previousAssignees?.includes(currentUser?.id || '');
+    return getTaskAssigneeIds(task).includes(currentUser?.id || '') || task.previousAssignees?.includes(currentUser?.id || '');
   });
 
   // ✅ تصحيح منطق الحساب للبطاقات العلوية
@@ -31,8 +32,9 @@ const Dashboard = () => {
           // للموظف: احسب المهام المنقولة منه كمكتملة
           else {
               const isTransferredFromMe = t.previousAssignees?.includes(currentUser?.id || '') && t.assigneeId !== currentUser?.id;
-              
-              if (t.status === 'COMPLETED' || isTransferredFromMe) {
+              const myStatus = getParticipantStatus(t, currentUser?.id || '');
+
+              if (myStatus === 'COMPLETED' || isTransferredFromMe) {
                   completedCount++;
               } else if (t.status === 'IN_PROGRESS') {
                   inProgressCount++;
@@ -67,15 +69,15 @@ const Dashboard = () => {
   const employeeStats = users
     .filter(u => u.role === 'EMPLOYEE')
     .map(user => {
-        const userTasks = tasks.filter(t => t.assigneeId === user.id || t.previousAssignees?.includes(user.id));
+        const userTasks = tasks.filter(t => getTaskAssigneeIds(t).includes(user.id) || t.previousAssignees?.includes(user.id));
         
         const userCompleted = userTasks.filter(t => {
-            const isCompletedSystem = t.status === 'COMPLETED';
+            const isCompletedSystem = getParticipantStatus(t, user.id) === 'COMPLETED';
             const isTransferredFromMe = t.previousAssignees?.includes(user.id) && t.assigneeId !== user.id;
             return isCompletedSystem || isTransferredFromMe;
         }).length;
         
-        const userLate = userTasks.filter(t => t.status === 'LATE' && t.assigneeId === user.id).length;
+        const userLate = userTasks.filter(t => t.status === 'LATE' && getTaskAssigneeIds(t).includes(user.id)).length;
         
         const userTotal = userTasks.length;
         const rate = userTotal > 0 ? Math.round((userCompleted / userTotal) * 100) : 0;
@@ -84,7 +86,7 @@ const Dashboard = () => {
     })
     .sort((a, b) => b.rate - a.rate);
 
-  const recentTasks = [...relevantTasks].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()).slice(0, 5);
+  const recentTasks = [...relevantTasks].sort((a, b) => new Date(b.lastUpdated || 0).getTime() - new Date(a.lastUpdated || 0).getTime()).slice(0, 5);
   const shouldShowLeaderboard = currentUser?.role === 'MANAGER' || showLeaderboard;
 
   return (
@@ -196,7 +198,7 @@ const Dashboard = () => {
                          <div>
                              <h4 className="text-sm font-medium text-white">{task.title}</h4>
                              <p className="text-xs text-slate-400 mt-0.5">
-                                 {users.find(u => u.id === task.assigneeId)?.name} • {task.dueDate}
+                                 {getTaskAssigneeIds(task).map(id => users.find(u => u.id === id)?.name).filter(Boolean).join('، ')} • {task.dueDate}
                              </p>
                          </div>
                      </div>
