@@ -60,7 +60,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onClose }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 space-y-2">
-        {currentUser?.role === 'MANAGER' && (
             <NavLink 
             to="/settings"
             onClick={handleLinkClick}
@@ -72,7 +71,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onClose }) => {
             <Settings size={20} />
             <span>الإعدادات</span>
             </NavLink>
-        )}
         <button 
           onClick={() => {
               logout();
