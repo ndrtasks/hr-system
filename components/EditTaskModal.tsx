@@ -13,7 +13,12 @@ const EditTaskModal: React.FC<{ task: Task; onClose: () => void }> = ({ task, on
   const [attachments, setAttachments] = useState<Attachment[]>(task.attachments || []);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const employees = users.filter(user => user.role === 'EMPLOYEE' && (isSuperAdminUser(currentUser) || user.department === currentUser?.department));
+  const superAdmin = isSuperAdminUser(currentUser);
+  const assignmentCandidates = users
+    .filter(user => superAdmin
+      ? user.id !== currentUser?.id && !isSuperAdminUser(user)
+      : user.role === 'EMPLOYEE' && user.department === currentUser?.department)
+    .sort((a, b) => a.department.localeCompare(b.department, 'ar') || (a.role === 'MANAGER' ? -1 : 1) || a.name.localeCompare(b.name, 'ar'));
 
   const addFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []).filter(file => file.size < 1024 * 1024);
@@ -30,7 +35,11 @@ const EditTaskModal: React.FC<{ task: Task; onClose: () => void }> = ({ task, on
     event.preventDefault();
     if (!title.trim() || !dueDate || assigneeIds.length === 0) return;
     setSaving(true);
-    await updateTaskDetails(task.id, { title: title.trim(), description, dueDate, priority, assigneeIds, attachments });
+    const selectedDepartments = Array.from(new Set(assignmentCandidates.filter(user => assigneeIds.includes(user.id)).map(user => user.department)));
+    const department = superAdmin
+      ? (selectedDepartments.length === 1 ? selectedDepartments[0] : `مشتركة: ${selectedDepartments.join('، ')}`)
+      : (currentUser?.department || task.department);
+    await updateTaskDetails(task.id, { title: title.trim(), description, dueDate, priority, assigneeIds, attachments, department, departments: selectedDepartments });
     setSaving(false);
     onClose();
   };
@@ -45,7 +54,7 @@ const EditTaskModal: React.FC<{ task: Task; onClose: () => void }> = ({ task, on
         <div><label className="text-xs text-slate-400">الأولوية</label><select value={priority} onChange={e => setPriority(e.target.value as Priority)} className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white"><option value="LOW">منخفضة</option><option value="MEDIUM">متوسطة</option><option value="HIGH">عالية</option></select></div>
       </div>
       <div><label className="text-xs text-slate-400">المشاركون</label><div className="mt-1 grid sm:grid-cols-2 gap-2 bg-slate-800 p-2 rounded-lg">
-        {employees.map(user => { const selected = assigneeIds.includes(user.id); return <button type="button" key={user.id} onClick={() => setAssigneeIds(previous => selected ? previous.filter(id => id !== user.id) : [...previous, user.id])} className={`flex justify-between p-2 rounded text-sm ${selected ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 bg-slate-900/40'}`}><span>{user.name}</span>{selected && <Check size={15}/>}</button>; })}
+        {assignmentCandidates.map(user => { const selected = assigneeIds.includes(user.id); return <button type="button" key={user.id} onClick={() => setAssigneeIds(previous => selected ? previous.filter(id => id !== user.id) : [...previous, user.id])} className={`flex items-center justify-between gap-2 p-2 rounded text-sm ${selected ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 bg-slate-900/40'}`}><span className="text-right"><span className="block">{user.name}</span><span className="block text-[10px] text-slate-500">{user.role === 'MANAGER' ? 'مدير قسم' : 'موظف'} • {user.jobTitle || 'بدون مسمى'} • {user.department}</span></span>{selected && <Check size={15}/>}</button>; })}
       </div></div>
       <div><label className="text-xs text-slate-400">المرفقات</label><input ref={fileRef} type="file" multiple className="hidden" accept="image/*,.pdf,.doc,.docx" onChange={addFiles}/><button type="button" onClick={() => fileRef.current?.click()} className="w-full mt-1 border border-dashed border-slate-600 rounded-lg p-3 text-slate-300 flex justify-center gap-2"><Paperclip size={16}/>إضافة مرفقات</button>
         <div className="space-y-2 mt-2">{attachments.map(item => <div key={item.id} className="flex justify-between bg-slate-800 rounded p-2 text-xs text-slate-300"><span className="flex gap-2">{item.type === 'IMAGE' ? <ImageIcon size={14}/> : <FileText size={14}/>} {item.name}</span><button type="button" onClick={() => setAttachments(previous => previous.filter(file => file.id !== item.id))}><Trash2 size={14} className="text-red-400"/></button></div>)}</div>
