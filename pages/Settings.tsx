@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Settings as SettingsIcon, Bell, Mail, Shield, Building, Save, Users, Eye, CheckCircle, KeyRound, EyeOff, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Mail, Shield, Building, Save, Users, Eye, CheckCircle, KeyRound, EyeOff, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { isSuperAdminUser } from '../types';
 
 const SettingsPage = () => {
-  const { currentUser, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword } = useTaskContext();
+  const { currentUser, departments, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword, addDepartment, updateDepartment, deleteDepartment } = useTaskContext();
+  const isSuperAdmin = isSuperAdminUser(currentUser);
   
   const [systemName, setSystemName] = useState('نظام إدارة المهام');
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -18,6 +20,30 @@ const SettingsPage = () => {
   const [showPasswords, setShowPasswords] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [departmentName, setDepartmentName] = useState('');
+  const [departmentMessage, setDepartmentMessage] = useState('');
+  const [departmentLoading, setDepartmentLoading] = useState(false);
+
+  const handleAddDepartment = async () => {
+      setDepartmentLoading(true);
+      const result = await addDepartment(departmentName);
+      setDepartmentLoading(false);
+      setDepartmentMessage(result.message);
+      if (result.success) setDepartmentName('');
+  };
+
+  const handleRenameDepartment = async (id: string, oldName: string) => {
+      const name = window.prompt('اكتب الاسم الجديد للقسم', oldName);
+      if (!name || name.trim() === oldName) return;
+      const result = await updateDepartment(id, name);
+      setDepartmentMessage(result.message);
+  };
+
+  const handleDeleteDepartment = async (id: string, name: string) => {
+      if (!window.confirm(`هل تريد حذف قسم «${name}»؟`)) return;
+      const result = await deleteDepartment(id);
+      setDepartmentMessage(result.message);
+  };
 
   const handleSave = () => {
       toggleLeaderboardVisibility(localShowLeaderboard);
@@ -167,22 +193,33 @@ const SettingsPage = () => {
               </div>
           </div>
 
-           <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+           {isSuperAdmin && <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
                   <Building size={20} className="text-emerald-500" />
                   الأقسام
               </h2>
-              <div className="flex flex-wrap gap-2">
-                  {['الموارد البشرية', 'التصميم', 'التطوير', 'المبيعات', 'الإدارة العامة'].map(dept => (
-                      <span key={dept} className="bg-slate-900 border border-slate-600 px-3 py-1 rounded-full text-sm text-slate-300 cursor-default hover:border-slate-500 transition-colors">
-                          {dept}
-                      </span>
-                  ))}
-                  <button className="px-3 py-1 rounded-full text-sm text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 transition-colors">
-                      + إضافة قسم
+              <p className="text-sm text-slate-400 mb-4">المدير العام وحده يستطيع إنشاء الأقسام. بعد الإنشاء يمكنك تعيين مدير وموظفين للقسم من صفحة فريق العمل.</p>
+              <div className="flex gap-2 mb-4">
+                  <input value={departmentName} onChange={event => setDepartmentName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); handleAddDepartment(); } }} placeholder="اسم القسم الجديد"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" />
+                  <button onClick={handleAddDepartment} disabled={departmentLoading || !departmentName.trim()} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-bold">
+                      {departmentLoading ? <Loader2 size={18} className="animate-spin"/> : <Plus size={18}/>} إضافة
                   </button>
               </div>
-          </div>
+              <div className="space-y-2">
+                  {!departments.length && <div className="text-center py-6 rounded-lg border border-dashed border-slate-700 text-sm text-slate-500">لا توجد أقسام مسجلة بعد</div>}
+                  {departments.map(department => (
+                      <div key={department.id} className="flex items-center justify-between bg-slate-900/70 border border-slate-700 px-4 py-3 rounded-lg">
+                          <span className="text-sm text-white font-medium">{department.name}</span>
+                          <div className="flex gap-2">
+                              <button onClick={() => handleRenameDepartment(department.id, department.name)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg" title="تعديل"><Pencil size={16}/></button>
+                              <button onClick={() => handleDeleteDepartment(department.id, department.name)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg" title="حذف"><Trash2 size={16}/></button>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+              {departmentMessage && <p className="text-sm text-slate-300 mt-3">{departmentMessage}</p>}
+          </div>}
 
           <div className="flex justify-end pt-4">
               <button 
