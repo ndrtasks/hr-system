@@ -12,6 +12,14 @@ export const USERS: User[] = [
   },
   {
     id: 'u2',
+    name: 'مدير النظام',
+    email: 'alfattani@hipit.edu.sa',
+    role: 'MANAGER',
+    avatar: 'https://i.pravatar.cc/150?u=u1',
+    department: 'الإدارة العامة'
+  },
+  {
+    id: 'u3',
     name: 'نادر النادر',
     email: 'nader@company.com',
     role: 'EMPLOYEE',
@@ -19,7 +27,7 @@ export const USERS: User[] = [
     department: 'الموارد البشرية'
   },
   {
-    id: 'u3',
+    id: 'u4',
     name: 'سارة محمد',
     email: 'sara@company.com',
     role: 'EMPLOYEE',
@@ -27,7 +35,7 @@ export const USERS: User[] = [
     department: 'التصميم'
   },
   {
-    id: 'u4',
+    id: 'u5',
     name: 'خالد أحمد',
     email: 'khaled@company.com',
     role: 'EMPLOYEE',
