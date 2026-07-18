@@ -4,6 +4,7 @@ import { X, Calendar, User as UserIcon, Send, MessageSquare, Clock, CheckCircle,
 import { Task, Status, Attachment, getTaskAssigneeIds, getParticipantStatus } from '../types';
 import { useTaskContext } from '../context/AppTaskContext';
 import { STATUS_LABELS, STATUS_COLORS } from '../constants';
+import EditTaskModal from './EditTaskModal';
 
 interface TaskModalProps {
   taskId: string;
@@ -26,6 +27,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
 
   // Delete State
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   const commentFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -522,6 +524,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
         <div className="p-6 border-t border-slate-800 bg-slate-900 flex justify-between items-center">
             <div className="flex items-center gap-4">
                  {currentUser?.role === 'MANAGER' && (
+                     <>
+                     <button type="button" onClick={() => setIsEditing(true)} className="text-xs text-blue-400 flex items-center gap-1 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20 hover:bg-blue-500/20"><Edit size={14}/>تعديل المهمة</button>
                      <button 
                         type="button"
                         onClick={handleDeleteTask}
@@ -531,6 +535,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                          {isDeleting ? 'جاري الحذف...' : 'حذف المهمة'}
                      </button>
+                     </>
                  )}
                 
                 {currentUser?.role === 'EMPLOYEE' && !isExtensionPending && !showExtensionForm && task.status !== 'COMPLETED' && (
@@ -558,6 +563,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
             </div>
         </div>
       </div>
+      {isEditing && <EditTaskModal task={task} onClose={() => setIsEditing(false)} />}
     </div>
   );
 };
