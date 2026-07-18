@@ -13,11 +13,12 @@ export interface User {
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type Status = 'NEW' | 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'LATE';
-export type ParticipantStatus = 'IN_PROGRESS' | 'COMPLETED';
+export type ParticipantStatus = 'IN_PROGRESS' | 'PENDING_APPROVAL' | 'COMPLETED';
 
 export interface ParticipantProgress {
   status: ParticipantStatus;
   completedAt?: string;
+  approvedById?: string;
 }
 
 export interface Attachment {
@@ -44,6 +45,8 @@ export interface ExtensionRequest {
   reason: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   requestDate: string;
+  requestedById?: string;
+  requestedByName?: string;
 }
 
 export interface Task {
@@ -75,6 +78,8 @@ export const getParticipantStatus = (task: Task, userId: string): ParticipantSta
   // إغلاق المدير للمهمة يعني اكتمالها لجميع المشاركين.
   if (task.status === 'COMPLETED') return 'COMPLETED';
   const saved = task.participantStatuses?.[userId]?.status;
+  // توافق انتقالي: الإنجازات المسجلة قبل إضافة اعتماد المدير تعامل كطلبات اعتماد.
+  if (saved === 'COMPLETED' && !task.participantStatuses?.[userId]?.approvedById) return 'PENDING_APPROVAL';
   if (saved) return saved;
   return 'IN_PROGRESS';
 };
