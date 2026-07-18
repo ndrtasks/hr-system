@@ -207,29 +207,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                            setCurrentUser(profile);
                            subscribeToUserData(profile);
                        } else {
-                           const tempUser: User = {
-                               id: firebaseUser.uid,
-                               name: firebaseUser.email?.split('@')[0] || 'المستخدم',
-                               email: firebaseUser.email || '',
-                               role: 'EMPLOYEE',
-                               avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email?.charAt(0)}`,
-                               department: 'عام'
-                           };
-                           await setDoc(doc(db, 'users', firebaseUser.uid), tempUser);
-                           setCurrentUser(tempUser);
-                           subscribeToUserData(tempUser);
+                           console.warn('تم رفض الدخول: لا يوجد ملف صلاحيات مرتبط بالحساب.');
+                           await signOut(auth);
+                           setCurrentUser(null);
                        }
                    } catch (e) {
-                       const fallbackProfile: User = {
-                           id: firebaseUser.uid,
-                           name: firebaseUser.email?.split('@')[0] || 'المستخدم',
-                           email: firebaseUser.email || '',
-                           role: 'EMPLOYEE',
-                           avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email?.charAt(0)}`,
-                           department: 'عام'
-                       };
-                       setCurrentUser(fallbackProfile);
-                       subscribeToUserData(fallbackProfile);
+                       console.error('تعذر التحقق من صلاحية الحساب؛ تم إلغاء الجلسة.', e);
+                       await signOut(auth);
+                       setCurrentUser(null);
                    }
                }
              } else {
@@ -334,6 +319,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithCredentials = async (email: string, pass: string, portal: LoginPortal): Promise<{ success: boolean; message?: string }> => {
     if (isLiveMode && authRef.current) {
+      const normalizedRequestedEmail = email.trim().toLowerCase();
+      if (portal === 'SUPER_ADMIN' && normalizedRequestedEmail !== 'ndrtasks@gmail.com') {
+          return { success: false, message: 'بوابة المدير العام مخصصة حصريًا لحساب مالك النظام.' };
+      }
+      if (portal !== 'SUPER_ADMIN' && normalizedRequestedEmail === 'ndrtasks@gmail.com') {
+          return { success: false, message: 'حساب مالك النظام يدخل من بوابة المدير العام فقط.' };
+      }
       pendingLoginPortalRef.current = portal;
       try {
         const credential = await signInWithEmailAndPassword(authRef.current, email, pass);
