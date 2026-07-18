@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+// Deployment bundle: complete account deletion UI + API\nimport { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
