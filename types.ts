@@ -13,7 +13,7 @@ export interface User {
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type Status = 'NEW' | 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'LATE';
-export type ParticipantStatus = 'IN_PROGRESS' | 'PENDING_APPROVAL' | 'COMPLETED';
+export type ParticipantStatus = 'IN_PROGRESS' | 'PENDING_APPROVAL' | 'PENDING_REOPEN' | 'COMPLETED';
 
 export interface ParticipantProgress {
   status: ParticipantStatus;
