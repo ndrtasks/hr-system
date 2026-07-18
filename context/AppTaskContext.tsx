@@ -39,6 +39,7 @@ interface TaskContextType {
   loginWithCredentials: (email: string, pass: string, portal: LoginPortal) => Promise<{ success: boolean; message?: string }>;
   recoverPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  cleanupTestData: (action: 'preview' | 'execute', confirmation?: string) => Promise<{ success: boolean; message?: string; counts?: CleanupCounts }>;
   logout: () => void;
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
@@ -68,6 +69,15 @@ interface TaskContextType {
   toggleLeaderboardVisibility: (show: boolean) => void;
   calculateTimeRemaining: (dueDate: string) => TimeRemaining;
   simulateEmail: (toEmail: string, subject: string) => void;
+}
+
+export interface CleanupCounts {
+  users: number;
+  tasks: number;
+  notifications: number;
+  conversations: number;
+  messages: number;
+  departmentsRetained: number;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -387,6 +397,25 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               'auth/network-request-failed': 'تعذر الاتصال. تحقق من الإنترنت وحاول مجددًا.'
           };
           return { success: false, message: messages[error?.code] || 'تعذر تغيير كلمة المرور.' };
+      }
+  };
+
+  const cleanupTestData = async (action: 'preview' | 'execute', confirmation = '') => {
+      const firebaseUser = authRef.current?.currentUser;
+      if (!isLiveMode || !firebaseUser || !isSuperAdminUser(currentUser)) {
+          return { success: false, message: 'هذه العملية متاحة للمدير العام فقط.' };
+      }
+      try {
+          const token = await firebaseUser.getIdToken();
+          const response = await fetch('/api/cleanup-test-data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ action, confirmation })
+          });
+          const result = await response.json();
+          return { success: response.ok && result.success, message: result.message, counts: result.counts };
+      } catch (error) {
+          return { success: false, message: 'تعذر الاتصال بخدمة التنظيف.' };
       }
   };
 
@@ -923,7 +952,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <TaskContext.Provider value={{ 
         tasks, users, departments, conversations, communicationMessages, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
-        login, loginWithCredentials, recoverPassword, changePassword, logout,
+        login, loginWithCredentials, recoverPassword, changePassword, cleanupTestData, logout,
         addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, addDepartment, updateDepartment, deleteDepartment, createConversation, sendCommunicationMessage, markConversationRead, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
