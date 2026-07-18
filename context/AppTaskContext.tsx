@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, Conversation, CommunicationMessage, ConversationType, getTaskAssigneeIds, getTaskLastActivityTime, getParticipantStatus, isSuperAdminUser } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, Department, DepartmentTaskMigrationPlan, LoginPortal, Conversation, CommunicationMessage, ConversationType, getTaskAssigneeIds, getTaskLastActivityTime, getParticipantStatus, isSuperAdminUser } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
@@ -51,7 +51,7 @@ interface TaskContextType {
   addComment: (taskId: string, content: string, attachments?: Attachment[]) => void;
   getTaskById: (id: string) => Task | undefined;
   addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
-  updateUser: (user: User) => Promise<{ success: boolean; message: string }>;
+  updateUser: (user: User, migrationPlan?: DepartmentTaskMigrationPlan) => Promise<{ success: boolean; message: string }>;
   deleteUser: (userId: string) => void;
   addDepartment: (name: string) => Promise<{ success: boolean; message: string; departmentId?: string }>;
   updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
@@ -723,7 +723,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUser = async (updatedUser: User) => {
+  const updateUser = async (updatedUser: User, migrationPlan: DepartmentTaskMigrationPlan = {}) => {
     if (!currentUser || currentUser.role !== 'MANAGER') return { success: false, message: 'لا توجد صلاحية لتعديل الحساب.' };
     const existing = users.find(user => user.id === updatedUser.id);
     if (!existing) return { success: false, message: 'الحساب غير موجود.' };
@@ -750,6 +750,44 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { id, ...rawData } = safeUpdatedUser;
         const data = Object.fromEntries(Object.entries(rawData).filter(([, value]) => value !== undefined));
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
+
+        // لا نغيّر المهام المكتملة. أما المهام النشطة فيقرر المدير العام لكل واحدة:
+        // إبقاؤها مع المستخدم أو نقل دوره إلى عضو آخر من القسم السابق.
+        if (existing.department !== safeUpdatedUser.department) {
+            const activeAssignedTasks = tasks.filter(task => task.status !== 'COMPLETED' && getTaskAssigneeIds(task).includes(existing.id));
+            for (const task of activeAssignedTasks) {
+                const replacementId = migrationPlan[task.id];
+                if (!replacementId || replacementId === 'KEEP' || replacementId === existing.id) continue;
+                const replacement = users.find(user => user.id === replacementId);
+                if (!replacement || replacement.department !== existing.department) continue;
+
+                const nextIds = Array.from(new Set(getTaskAssigneeIds(task).map(id => id === existing.id ? replacementId : id)));
+                const { [existing.id]: _removedStatus, ...remainingStatuses } = task.participantStatuses || {};
+                const participantStatuses = {
+                    ...remainingStatuses,
+                    [replacementId]: remainingStatuses[replacementId] || { status: 'IN_PROGRESS' as const }
+                };
+                const participantDepartments = Array.from(new Set(nextIds.map(uid => users.find(user => user.id === uid)?.department).filter(Boolean) as string[]));
+                const log: Comment = {
+                    id: `sys_department_move_${Date.now()}_${task.id}`,
+                    userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true,
+                    content: `نُقل دور ${existing.name} إلى ${replacement.name} بسبب انتقاله من قسم ${existing.department} إلى ${safeUpdatedUser.department}`,
+                    timestamp: new Date().toISOString()
+                };
+                await updateDoc(doc(dbRef.current, 'tasks', task.id), {
+                    assigneeId: nextIds[0],
+                    assigneeIds: nextIds,
+                    participantStatuses,
+                    departments: participantDepartments,
+                    department: participantDepartments[0] || task.department,
+                    previousAssignees: Array.from(new Set([...(task.previousAssignees || []), existing.id])),
+                    comments: [...(task.comments || []), log],
+                    lastUpdated: serverTimestamp()
+                });
+                await createNotification(replacementId, 'مهمة منقولة إليك', `نُقل إليك دور في مهمة: ${task.title}`, 'INFO', task.id);
+                await createNotification(existing.id, 'تم نقل مهمة بعد تغيير القسم', `تم نقل دورك في مهمة: ${task.title}`, 'INFO', task.id);
+            }
+        }
         if (existing?.role === 'MANAGER' && existing.departmentId && existing.departmentId !== safeUpdatedUser.departmentId) {
             await updateDoc(doc(dbRef.current, 'departments', existing.departmentId), {
                 managerId: '', managerName: '', managerJobTitle: ''
