@@ -21,7 +21,12 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const employees = users.filter(u => u.role === 'EMPLOYEE' && (isSuperAdminUser(currentUser) || u.department === currentUser?.department));
+  const superAdmin = isSuperAdminUser(currentUser);
+  const assignmentCandidates = users
+    .filter(user => superAdmin
+      ? user.id !== currentUser?.id && !isSuperAdminUser(user)
+      : user.role === 'EMPLOYEE' && user.department === currentUser?.department)
+    .sort((a, b) => a.department.localeCompare(b.department, 'ar') || (a.role === 'MANAGER' ? -1 : 1) || a.name.localeCompare(b.name, 'ar'));
 
   const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
@@ -65,6 +70,12 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
     const participantStatuses = Object.fromEntries(
       assigneeIds.map(id => [id, { status: 'IN_PROGRESS' as const }])
     );
+    const selectedDepartments = Array.from(new Set(
+      assignmentCandidates.filter(user => assigneeIds.includes(user.id)).map(user => user.department)
+    ));
+    const taskDepartment = superAdmin
+      ? (selectedDepartments.length === 1 ? selectedDepartments[0] : `مشتركة: ${selectedDepartments.join('، ')}`)
+      : (currentUser?.department || selectedDepartments[0] || 'General');
 
     const newTask: Task = {
       id: `t_${Date.now()}`,
@@ -77,7 +88,8 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
       assigneeIds,
       participantStatuses,
       createdBy: currentUser?.id || '',
-      department: currentUser?.department || users.find(u => u.id === assigneeIds[0])?.department || 'General',
+      department: taskDepartment,
+      departments: selectedDepartments,
       isRecurring,
       lastUpdated: new Date().toISOString(), // Set initial lastUpdated for sorting
       comments: [
@@ -172,22 +184,25 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">إسناد إلى موظف أو أكثر</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">{superAdmin ? 'إسناد إلى مدير أو موظف' : 'إسناد إلى موظف أو أكثر'}</label>
               <div className="bg-slate-800 border border-slate-700 rounded-lg p-2 max-h-36 overflow-y-auto space-y-1">
-                {employees.length === 0 && <p className="text-xs text-slate-500 p-2">لا يوجد موظفون في هذا القسم</p>}
-                {employees.map(u => {
+                {assignmentCandidates.length === 0 && <p className="text-xs text-slate-500 p-2">لا يوجد أشخاص متاحون للإسناد</p>}
+                {assignmentCandidates.map(u => {
                   const selected = assigneeIds.includes(u.id);
                   return (
                     <button key={u.id} type="button"
                       onClick={() => setAssigneeIds(prev => selected ? prev.filter(id => id !== u.id) : [...prev, u.id])}
                       className={`w-full flex items-center justify-between rounded-md px-2.5 py-2 text-sm ${selected ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:bg-slate-700'}`}>
-                      <span className="flex items-center gap-2"><Users size={15} />{u.name}</span>
+                      <span className="flex items-center gap-2 min-w-0 text-right">
+                        <Users size={15} className="shrink-0" />
+                        <span className="min-w-0"><span className="block truncate">{u.name}</span><span className="block text-[10px] text-slate-500 truncate">{u.role === 'MANAGER' ? 'مدير قسم' : 'موظف'} • {u.jobTitle || 'بدون مسمى'} • {u.department}</span></span>
+                      </span>
                       {selected && <Check size={16} />}
                     </button>
                   );
                 })}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">تم اختيار {assigneeIds.length} موظف</p>
+              <p className="text-[11px] text-slate-500 mt-1">تم اختيار {assigneeIds.length} شخص</p>
             </div>
 
              <div>
