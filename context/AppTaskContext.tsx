@@ -7,7 +7,7 @@ import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
 // Firebase Imports
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 
 // Google Gemini API
@@ -52,7 +52,7 @@ interface TaskContextType {
   sendTaskReminder: (taskId: string) => Promise<void>;
   addComment: (taskId: string, content: string, attachments?: Attachment[]) => void;
   getTaskById: (id: string) => Task | undefined;
-  addUser: (user: User) => void;
+  addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   updateUser: (user: User) => void;
   deleteUser: (userId: string) => void;
   markNotificationAsRead: (id: string) => void;
@@ -509,16 +509,41 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addUser = async (user: User) => {
     if (isLiveMode && dbRef.current && authRef.current) {
+         let createdAuthUser: any = null;
+         let secondaryAuth: any = null;
          try {
              const secondaryApp = getApps().find(app => app.name === 'secondary') || initializeApp(firebaseConfig, 'secondary');
-             const secondaryAuth = getAuth(secondaryApp);
+             secondaryAuth = getAuth(secondaryApp);
              const userCred = await createUserWithEmailAndPassword(secondaryAuth, user.email, user.password || '123456');
+             createdAuthUser = userCred.user;
              await setDoc(doc(dbRef.current, 'users', userCred.user.uid), { ...user, id: userCred.user.uid, password: '' }); // Don't store password in plain text
-             await signOut(secondaryAuth);
              sendEmailNotification(user.email, 'تم إنشاء حسابك', `كلمة المرور: ${user.password || '123456'}`);
-         } catch (e) { alert("حدث خطأ أثناء إنشاء الحساب."); }
+             return { success: true };
+         } catch (error: any) {
+             // Prevent an orphan Authentication account when saving the Firestore profile fails.
+             if (createdAuthUser) {
+                 try { await deleteAuthUser(createdAuthUser); } catch (_) {}
+             }
+
+             const messages: Record<string, string> = {
+                 'auth/email-already-in-use': 'البريد الإلكتروني مسجل مسبقا في Firebase',
+                 'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
+                 'auth/weak-password': 'كلمة المرور ضعيفة ويجب ألا تقل عن 6 أحرف',
+                 'auth/network-request-failed': 'تعذر الاتصال بـ Firebase، تحقق من الإنترنت وحاول مرة أخرى',
+                 'permission-denied': 'لا توجد صلاحية لحفظ بيانات الموظف في Firestore'
+             };
+             return {
+                 success: false,
+                 message: messages[error?.code] || messages[error?.message] || `تعذر إنشاء الحساب (${error?.code || 'خطأ غير معروف'})`
+             };
+         } finally {
+             if (secondaryAuth) {
+                 try { await signOut(secondaryAuth); } catch (_) {}
+             }
+         }
     } else {
         setUsers(prev => [...prev, user]);
+        return { success: true };
     }
   };
 
