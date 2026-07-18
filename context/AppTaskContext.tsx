@@ -10,19 +10,12 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe, serverTimestamp } from 'firebase/firestore';
 
-// Google Gemini API
-import { GoogleGenAI } from "@google/genai";
-
 // EmailJS
 import emailjs from '@emailjs/browser';
 
 // ---------------------------------------------------------------------------
 // 🛑 إعدادات المدير المالك (Super Admin)
 const ADMIN_KEYWORD = "ndrtasks"; 
-// ---------------------------------------------------------------------------
-
-// 🛑 مفتاح الذكاء الاصطناعي (Gemini)
-const GEMINI_API_KEY = ""; 
 // ---------------------------------------------------------------------------
 
 interface TimeRemaining {
@@ -66,7 +59,6 @@ interface TaskContextType {
   resolveExtensionRequest: (taskId: string, approved: boolean, finalDate?: string) => void;
   toggleLeaderboardVisibility: (show: boolean) => void;
   calculateTimeRemaining: (dueDate: string) => TimeRemaining;
-  generateAIResponse: (type: 'PLAN' | 'IMPROVE' | 'EMAIL', title: string, description: string, assigneeName?: string) => Promise<string>;
   simulateEmail: (toEmail: string, subject: string) => void;
 }
 
@@ -302,22 +294,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Helper to find task
   const getTaskById = (id: string) => tasks.find(t => t.id === id);
-
-  const generateAIResponse = async (type: 'PLAN' | 'IMPROVE' | 'EMAIL', title: string, description: string, assigneeName: string = 'الموظف'): Promise<string> => {
-    const apiKey = GEMINI_API_KEY || firebaseConfig.apiKey; 
-    if (!apiKey) return "عذراً، لم يتم تكوين مفتاح Gemini API.";
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: apiKey });
-      let prompt = '';
-      if (type === 'PLAN') prompt = `بصفتك خبير إدارة مهام، قم بإنشاء "خطة تنفيذية" للمهمة: ${title} - ${description}. المطلوب: قائمة نقاط (Checklist) باللغة العربية.`;
-      else if (type === 'IMPROVE') prompt = `أعد صياغة وصف المهمة التالية ليكون احترافياً: ${title} - ${description}`;
-      else if (type === 'EMAIL') prompt = `اكتب مسودة بريد إلكتروني رسمي للموظف "${assigneeName}" بخصوص المهمة: ${title}.`;
-
-      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-      return response.text || "لم يتمكن النظام من توليد النص.";
-    } catch (error) { return "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي."; }
-  };
 
   const login = (userId: string) => {
     const user = users.find(u => u.id === userId);
@@ -722,8 +698,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addUser, updateUser, deleteUser, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
-        toggleLeaderboardVisibility, calculateTimeRemaining,
-        generateAIResponse 
+        toggleLeaderboardVisibility, calculateTimeRemaining
     }}>
       {children}
     </TaskContext.Provider>
