@@ -98,7 +98,7 @@ const AppHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
           <div className="text-left hidden sm:block">
             <p className="text-sm font-semibold text-white">{currentUser?.name}</p>
-            <p className="text-xs text-slate-400">{currentUser?.role === 'MANAGER' ? 'مدير النظام' : 'موظف'}</p>
+            <p className="text-xs text-slate-400">{currentUser?.jobTitle || (currentUser?.role === 'MANAGER' ? 'مدير النظام' : 'موظف')}</p>
           </div>
           <img 
             src={currentUser?.avatar} 
