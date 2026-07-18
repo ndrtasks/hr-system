@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Check, FileText, Image as ImageIcon, Paperclip, Trash2, X } from 'lucide-react';
-import { Attachment, Priority, Task, getTaskAssigneeIds } from '../types';
+import { Attachment, Priority, Task, getTaskAssigneeIds, isSuperAdminUser } from '../types';
 import { useTaskContext } from '../context/AppTaskContext';
 
 const EditTaskModal: React.FC<{ task: Task; onClose: () => void }> = ({ task, onClose }) => {
@@ -13,7 +13,7 @@ const EditTaskModal: React.FC<{ task: Task; onClose: () => void }> = ({ task, on
   const [attachments, setAttachments] = useState<Attachment[]>(task.attachments || []);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const employees = users.filter(user => user.role === 'EMPLOYEE' && (currentUser?.email === 'ndrtasks@gmail.com' || user.department === currentUser?.department));
+  const employees = users.filter(user => user.role === 'EMPLOYEE' && (isSuperAdminUser(currentUser) || user.department === currentUser?.department));
 
   const addFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []).filter(file => file.size < 1024 * 1024);
