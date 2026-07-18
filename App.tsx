@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Team from './pages/Team';
 import TasksPage from './pages/TasksPage';
 import SettingsPage from './pages/Settings';
+import AIAssistant from './components/AIAssistant';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,6 +36,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950">
           {children}
         </main>
+        <AIAssistant />
       </div>
     </div>
   );
