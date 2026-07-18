@@ -79,24 +79,34 @@ export default async function handler(request: any, response: any) {
       if (result.failureCount) throw new Error('AUTH_DELETE_PARTIAL_FAILURE');
     }
 
+    const deleteDepartments = request.body?.deleteDepartments === true;
     const references = [
       ...usersToDelete.map(item => item.ref),
-      ...collectionSnapshots.flatMap(snapshot => snapshot.docs.map(item => item.ref))
+      ...collectionSnapshots.flatMap(snapshot => snapshot.docs.map(item => item.ref)),
+      ...(deleteDepartments ? departmentSnapshot.docs.map(item => item.ref) : [])
     ];
     await deleteDocuments(firestore, references);
 
-    for (let index = 0; index < departmentSnapshot.docs.length; index += 450) {
-      const batch = firestore.batch();
-      departmentSnapshot.docs.slice(index, index + 450).forEach(item => batch.update(item.ref, {
-        managerId: FieldValue.delete(),
-        managerName: FieldValue.delete(),
-        managerJobTitle: FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp()
-      }));
-      await batch.commit();
+    if (!deleteDepartments) {
+      for (let index = 0; index < departmentSnapshot.docs.length; index += 450) {
+        const batch = firestore.batch();
+        departmentSnapshot.docs.slice(index, index + 450).forEach(item => batch.update(item.ref, {
+          managerId: FieldValue.delete(),
+          managerName: FieldValue.delete(),
+          managerJobTitle: FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp()
+        }));
+        await batch.commit();
+      }
     }
 
-    return response.status(200).json({ success: true, counts, message: 'تم تنظيف بيانات التجربة مع الاحتفاظ بالمدير العام والأقسام.' });
+    return response.status(200).json({
+      success: true,
+      counts,
+      message: deleteDepartments
+        ? 'تم تنظيف بيانات التجربة والأقسام مع الاحتفاظ بحساب المدير العام.'
+        : 'تم تنظيف بيانات التجربة مع الاحتفاظ بالمدير العام والأقسام.'
+    });
   } catch (error: any) {
     const code = error?.code || error?.message;
     if (code === 'FIREBASE_ADMIN_NOT_CONFIGURED') return response.status(503).json({ message: 'بيانات Firebase Admin غير مضافة إلى Vercel.' });
