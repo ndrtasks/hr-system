@@ -241,18 +241,16 @@ const Login = () => {
                         )}
                     </button>
 
-                    {view !== 'EMPLOYEE' && (
-                        <div className="text-center mt-4">
-                            <button 
-                                type="button"
-                                onClick={() => setShowRecovery(true)}
-                                className="text-xs text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 mx-auto transition-colors"
-                            >
-                                <KeyRound size={12} />
-                                نسيت كلمة المرور؟
-                            </button>
-                        </div>
-                    )}
+                    <div className="text-center mt-4">
+                        <button 
+                            type="button"
+                            onClick={() => setShowRecovery(true)}
+                            className="text-xs text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 mx-auto transition-colors"
+                        >
+                            <KeyRound size={12} />
+                            نسيت كلمة المرور؟
+                        </button>
+                    </div>
                 </form>
             )}
         </div>
