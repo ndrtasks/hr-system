@@ -53,7 +53,7 @@ interface TaskContextType {
   getTaskById: (id: string) => Task | undefined;
   addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   updateUser: (user: User, migrationPlan?: DepartmentTaskMigrationPlan) => Promise<{ success: boolean; message: string }>;
-  deleteUser: (userId: string) => void;
+  deleteUser: (userId: string, confirmation: string) => Promise<{ success: boolean; message: string; summary?: { deletedTasks: number; updatedTasks: number; notifications: number } }>;
   addDepartment: (name: string) => Promise<{ success: boolean; message: string; departmentId?: string }>;
   updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
   deleteDepartment: (departmentId: string) => Promise<{ success: boolean; message: string }>;
@@ -836,19 +836,34 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: true, message: 'تم تحديث بيانات الحساب وتسجيل الدخول بنجاح.' };
   };
 
-  const deleteUser = async (userId: string) => {
+  const deleteUser = async (userId: string, confirmation: string) => {
     const target = users.find(user => user.id === userId);
-    if (!currentUser || currentUser.role !== 'MANAGER' || userId === currentUser.id) return;
-    if (!isSuperAdminUser(currentUser) && (!target || target.role !== 'EMPLOYEE' || target.department !== currentUser.department)) return;
-    if (isLiveMode && dbRef.current) {
-        await deleteDoc(doc(dbRef.current, 'users', userId));
-        if (target?.role === 'MANAGER' && target.departmentId) {
-            await updateDoc(doc(dbRef.current, 'departments', target.departmentId), {
-                managerId: '', managerName: '', managerJobTitle: ''
+    if (!currentUser || currentUser.role !== 'MANAGER' || userId === currentUser.id) return { success: false, message: 'لا تملك صلاحية حذف هذا الحساب.' };
+    if (!isSuperAdminUser(currentUser) && (!target || target.role !== 'EMPLOYEE' || target.department !== currentUser.department)) return { success: false, message: 'يمكن لمدير القسم حذف موظفي قسمه فقط.' };
+    if (!target) return { success: false, message: 'الحساب غير موجود.' };
+    if (isLiveMode && authRef.current?.currentUser) {
+        try {
+            const token = await authRef.current.currentUser.getIdToken(true);
+            const response = await fetch('/api/delete-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ userId, confirmation })
             });
+            const result = await response.json();
+            if (!response.ok) return { success: false, message: result.message || 'تعذر حذف الحساب.' };
+            return result;
+        } catch (error) {
+            console.error('deleteUser', error);
+            return { success: false, message: 'تعذر الاتصال بخدمة حذف الحساب.' };
         }
     }
-    else setUsers(prev => prev.filter(u => u.id !== userId));
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setTasks(prev => prev.filter(task => !getTaskAssigneeIds(task).includes(userId) || getTaskAssigneeIds(task).length > 1).map(task => {
+        if (!getTaskAssigneeIds(task).includes(userId)) return task;
+        const ids = getTaskAssigneeIds(task).filter(id => id !== userId);
+        return { ...task, assigneeId: ids[0], assigneeIds: ids };
+    }));
+    return { success: true, message: `تم حذف حساب ${target.name}.`, summary: { deletedTasks: 0, updatedTasks: 0, notifications: 0 } };
   };
 
   const addDepartment = async (name: string) => {
