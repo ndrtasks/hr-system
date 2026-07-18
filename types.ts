@@ -65,7 +65,7 @@ export interface Task {
   attachments?: Attachment[];
   isRecurring: boolean;
   extensionRequest?: ExtensionRequest;
-  lastUpdated?: string; // تاريخ آخر نشاط (للترتيب)
+  lastUpdated?: any; // وقت آخر نشاط؛ يحفظه خادم Firestore في الوضع المباشر
   previousAssignees?: string[]; // قائمة الموظفين السابقين الذين استلموا المهمة
 }
 
@@ -85,6 +85,8 @@ export const getParticipantStatus = (task: Task, userId: string): ParticipantSta
 };
 
 export const getTaskLastActivityTime = (task: Task): number => {
+  const serverTime = task.lastUpdated?.toMillis?.() ?? (task.lastUpdated?.seconds ? task.lastUpdated.seconds * 1000 : 0);
+  if (serverTime) return serverTime;
   const timestamps = [
     task.lastUpdated,
     task.extensionRequest?.requestDate,
