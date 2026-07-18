@@ -9,14 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.3.0",
+    "@google/genai": "latest",
+    "firebase": "^10.8.0",
+    "firebase-admin": "^13.10.0",
+    "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3",
-    "lucide-react": "^0.344.0",
-    "firebase": "^10.8.0",
-    "recharts": "^2.12.2",
-    "@google/genai": "latest",
-    "@emailjs/browser": "^4.3.0"
+    "recharts": "^2.12.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
