@@ -753,13 +753,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // لا نغيّر المهام المكتملة. أما المهام النشطة فيقرر المدير العام لكل واحدة:
         // إبقاؤها مع المستخدم أو نقل دوره إلى عضو آخر من القسم السابق.
-        if (existing.department !== safeUpdatedUser.department) {
+        if (existing.department !== safeUpdatedUser.department || Object.keys(migrationPlan).length > 0) {
             const activeAssignedTasks = tasks.filter(task => task.status !== 'COMPLETED' && getTaskAssigneeIds(task).includes(existing.id));
             for (const task of activeAssignedTasks) {
                 const replacementId = migrationPlan[task.id];
                 if (!replacementId || replacementId === 'KEEP' || replacementId === existing.id) continue;
                 const replacement = users.find(user => user.id === replacementId);
-                if (!replacement || replacement.department !== existing.department) continue;
+                if (!replacement || (replacement.department !== task.department && !task.departments?.includes(replacement.department))) continue;
 
                 const nextIds = Array.from(new Set(getTaskAssigneeIds(task).map(id => id === existing.id ? replacementId : id)));
                 const { [existing.id]: _removedStatus, ...remainingStatuses } = task.participantStatuses || {};
@@ -771,7 +771,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const log: Comment = {
                     id: `sys_department_move_${Date.now()}_${task.id}`,
                     userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true,
-                    content: `نُقل دور ${existing.name} إلى ${replacement.name} بسبب انتقاله من قسم ${existing.department} إلى ${safeUpdatedUser.department}`,
+                    content: `نُقل دور ${existing.name} إلى ${replacement.name} بعد انتقال ${existing.name} إلى قسم ${safeUpdatedUser.department}`,
                     timestamp: new Date().toISOString()
                 };
                 await updateDoc(doc(dbRef.current, 'tasks', task.id), {
