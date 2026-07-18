@@ -247,10 +247,7 @@ const Login = () => {
                         النظام متصل بقاعدة البيانات (Live Mode)
                     </p>
                 ) : (
-                    <>
-                        <p className="text-[10px] text-slate-600 mb-1">بيانات المدير الافتراضية (للنسخة التجريبية):</p>
-                        <code className="text-[10px] bg-slate-900 px-2 py-1 rounded text-slate-400">ndr****@gmail.com / 123456</code>
-                    </>
+                    <p className="text-[10px] text-amber-500/70">تعذر الاتصال بقاعدة البيانات</p>
                 )}
             </div>
         )}
