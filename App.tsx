@@ -9,6 +9,8 @@ import Team from './pages/Team';
 import TasksPage from './pages/TasksPage';
 import SettingsPage from './pages/Settings';
 import AIAssistant from './components/AIAssistant';
+import Communications from './pages/Communications';
+import SuperAdminCenter from './pages/SuperAdminCenter';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -58,6 +60,8 @@ const AppRoutes = () => {
        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
        <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+       <Route path="/communications" element={<ProtectedRoute><Communications /></ProtectedRoute>} />
+       <Route path="/command-center" element={<ProtectedRoute><SuperAdminCenter /></ProtectedRoute>} />
        <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
