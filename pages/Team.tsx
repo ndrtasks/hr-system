@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar } from 'lucide-react';
-import { User, Role, Task, Department, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
+import { User, Role, Task, Department, DepartmentTaskMigrationPlan, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
 const Team = () => {
@@ -39,9 +39,9 @@ const Team = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveUser = async (u: User) => {
+  const handleSaveUser = async (u: User, migrationPlan?: DepartmentTaskMigrationPlan) => {
     if (editingUser) {
-      const result = await updateUser(u);
+      const result = await updateUser(u, migrationPlan);
       if (!result.success) {
         alert(result.message);
         return;
@@ -214,6 +214,8 @@ const Team = () => {
             onResetPassword={handleResetPassword}
             currentUser={currentUser!}
             departments={departments}
+            users={users}
+            tasks={tasks}
           />
       )}
 
@@ -231,13 +233,15 @@ const Team = () => {
 interface UserFormModalProps {
     user: User | null;
     onClose: () => void;
-    onSave: (user: User) => Promise<void>;
+    onSave: (user: User, migrationPlan?: DepartmentTaskMigrationPlan) => Promise<void>;
     onResetPassword?: (email: string) => void;
     currentUser: User;
     departments: Department[];
+    users: User[];
+    tasks: Task[];
 }
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword, currentUser, departments }) => {
+const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword, currentUser, departments, users, tasks }) => {
     const isSuperAdmin = isSuperAdminUser(currentUser);
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -246,6 +250,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
     const [avatar, setAvatar] = useState(user?.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`);
     const [password, setPassword] = useState('');
     const [jobTitle, setJobTitle] = useState(user?.jobTitle || (role === 'MANAGER' ? `مدير ${department}` : ''));
+    const [pendingUser, setPendingUser] = useState<User | null>(null);
+    const [migrationPlan, setMigrationPlan] = useState<DepartmentTaskMigrationPlan>({});
+    const activeDepartmentTasks = user
+        ? tasks.filter(task => task.status !== 'COMPLETED' && getTaskAssigneeIds(task).includes(user.id))
+        : [];
+    const oldDepartmentCandidates = user
+        ? users.filter(candidate => candidate.id !== user.id && candidate.department === user.department && !isSuperAdminUser(candidate))
+        : [];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -262,8 +274,43 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             // Only include password if it's a new user
             ...(password ? { password } : {})
         };
+        if (user && user.department !== userData.department && activeDepartmentTasks.length) {
+            setPendingUser(userData);
+            setMigrationPlan(Object.fromEntries(activeDepartmentTasks.map(task => [task.id, 'KEEP'])));
+            return;
+        }
         await onSave(userData);
     };
+
+    const confirmDepartmentMove = async () => {
+        if (!pendingUser) return;
+        await onSave(pendingUser, migrationPlan);
+    };
+
+    if (pendingUser && user) return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden" dir="rtl">
+                <div className="p-5 border-b border-slate-800 flex items-start justify-between gap-4">
+                    <div><h2 className="text-lg font-bold text-white">معالجة المهام عند تغيير القسم</h2><p className="text-xs text-slate-400 mt-1">سينتقل {user.name} من {user.department} إلى {pendingUser.department}. اختر ما يحدث لدوره في كل مهمة نشطة.</p></div>
+                    <button onClick={() => setPendingUser(null)} className="text-slate-500 hover:text-white"><X size={20}/></button>
+                </div>
+                <div className="p-5 space-y-3 max-h-[55vh] overflow-y-auto">
+                    {activeDepartmentTasks.map(task => <div key={task.id} className="bg-slate-800/70 border border-slate-700 rounded-xl p-4">
+                        <div className="mb-3"><p className="font-bold text-white text-sm">{task.title}</p><p className="text-[11px] text-slate-500 mt-1">{task.department} • المهام المكتملة لا تتأثر بهذا الإجراء</p></div>
+                        <select value={migrationPlan[task.id] || 'KEEP'} onChange={event => setMigrationPlan(previous => ({ ...previous, [task.id]: event.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500">
+                            <option value="KEEP">إبقاء المهمة معه حتى ينهيها</option>
+                            {oldDepartmentCandidates.map(candidate => <option key={candidate.id} value={candidate.id}>نقل دوره إلى: {candidate.name} — {candidate.jobTitle || (candidate.role === 'MANAGER' ? 'مدير قسم' : 'موظف')}</option>)}
+                        </select>
+                    </div>)}
+                    {!oldDepartmentCandidates.length && <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">لا يوجد عضو آخر في القسم السابق لنقل المهام إليه؛ يمكنك إبقاء المهام مع المستخدم حاليًا.</p>}
+                </div>
+                <div className="p-5 border-t border-slate-800 flex flex-col-reverse sm:flex-row gap-3">
+                    <button onClick={() => setPendingUser(null)} className="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-300">رجوع للتعديل</button>
+                    <button onClick={confirmDepartmentMove} className="sm:mr-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold">تأكيد النقل وحفظ الحساب</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
