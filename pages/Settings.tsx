@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Settings as SettingsIcon, Bell, Mail, Shield, Building, Save, Users, Eye, CheckCircle, KeyRound, EyeOff, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
-import { isSuperAdminUser } from '../types';
+import { isSuperAdminUser, User } from '../types';
 
 const SettingsPage = () => {
-  const { currentUser, departments, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword, addDepartment, updateDepartment, deleteDepartment } = useTaskContext();
+  const { currentUser, departments, users, simulateEmail, showLeaderboard, toggleLeaderboardVisibility, changePassword, addDepartment, updateDepartment, deleteDepartment, addUser } = useTaskContext();
   const isSuperAdmin = isSuperAdminUser(currentUser);
   
   const [systemName, setSystemName] = useState('نظام إدارة المهام');
@@ -21,15 +21,49 @@ const SettingsPage = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [departmentName, setDepartmentName] = useState('');
+  const [managerName, setManagerName] = useState('');
+  const [managerJobTitle, setManagerJobTitle] = useState('');
+  const [managerEmail, setManagerEmail] = useState('');
+  const [managerPassword, setManagerPassword] = useState('');
   const [departmentMessage, setDepartmentMessage] = useState('');
   const [departmentLoading, setDepartmentLoading] = useState(false);
 
   const handleAddDepartment = async () => {
+      if (![departmentName, managerName, managerJobTitle, managerEmail, managerPassword].every(value => value.trim())) {
+          setDepartmentMessage('أكمل بيانات القسم ومديره أولًا.');
+          return;
+      }
       setDepartmentLoading(true);
       const result = await addDepartment(departmentName);
+      if (!result.success || !result.departmentId) {
+          setDepartmentLoading(false);
+          setDepartmentMessage(result.message);
+          return;
+      }
+      const manager: User = {
+          id: `manager_${Date.now()}`,
+          name: managerName.trim(),
+          email: managerEmail.trim(),
+          password: managerPassword,
+          role: 'MANAGER',
+          accessLevel: 'DEPARTMENT_MANAGER',
+          avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(managerEmail.trim())}`,
+          department: departmentName.trim(),
+          departmentId: result.departmentId,
+          jobTitle: managerJobTitle.trim()
+      };
+      const managerResult = await addUser(manager);
       setDepartmentLoading(false);
-      setDepartmentMessage(result.message);
-      if (result.success) setDepartmentName('');
+      if (!managerResult.success) {
+          setDepartmentMessage(`تم إنشاء القسم، لكن تعذر إنشاء حساب المدير: ${managerResult.message}`);
+          return;
+      }
+      setDepartmentMessage('تم إنشاء القسم وربط مدير القسم به بنجاح.');
+      setDepartmentName('');
+      setManagerName('');
+      setManagerJobTitle('');
+      setManagerEmail('');
+      setManagerPassword('');
   };
 
   const handleRenameDepartment = async (id: string, oldName: string) => {
@@ -198,25 +232,30 @@ const SettingsPage = () => {
                   <Building size={20} className="text-emerald-500" />
                   الأقسام
               </h2>
-              <p className="text-sm text-slate-400 mb-4">المدير العام وحده يستطيع إنشاء الأقسام. بعد الإنشاء يمكنك تعيين مدير وموظفين للقسم من صفحة فريق العمل.</p>
-              <div className="flex gap-2 mb-4">
-                  <input value={departmentName} onChange={event => setDepartmentName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); handleAddDepartment(); } }} placeholder="اسم القسم الجديد"
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" />
-                  <button onClick={handleAddDepartment} disabled={departmentLoading || !departmentName.trim()} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-bold">
-                      {departmentLoading ? <Loader2 size={18} className="animate-spin"/> : <Plus size={18}/>} إضافة
+              <p className="text-sm text-slate-400 mb-4">أنشئ القسم وحساب مديره في خطوة واحدة. كل موظف يضيفه مدير القسم سيُربط تلقائيًا بهذا القسم.</p>
+              <div className="grid md:grid-cols-2 gap-3 mb-4 bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                  <div><label className="block text-xs text-slate-400 mb-1.5">اسم القسم</label><input value={departmentName} onChange={event => setDepartmentName(event.target.value)} placeholder="مثال: إدارة التسويق" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" /></div>
+                  <div><label className="block text-xs text-slate-400 mb-1.5">اسم مدير القسم</label><input value={managerName} onChange={event => setManagerName(event.target.value)} placeholder="الاسم الكامل" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" /></div>
+                  <div><label className="block text-xs text-slate-400 mb-1.5">مسمى مدير القسم</label><input value={managerJobTitle} onChange={event => setManagerJobTitle(event.target.value)} placeholder="مثال: مدير إدارة التسويق" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" /></div>
+                  <div><label className="block text-xs text-slate-400 mb-1.5">بريد مدير القسم</label><input type="email" value={managerEmail} onChange={event => setManagerEmail(event.target.value)} placeholder="manager@company.com" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs text-slate-400 mb-1.5">كلمة المرور للدخول الأول</label><input type="text" minLength={6} value={managerPassword} onChange={event => setManagerPassword(event.target.value)} placeholder="6 أحرف أو أرقام على الأقل" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-emerald-500 outline-none" /></div>
+                  <button onClick={handleAddDepartment} disabled={departmentLoading} className="md:col-span-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 font-bold">
+                      {departmentLoading ? <Loader2 size={18} className="animate-spin"/> : <Plus size={18}/>} إنشاء القسم وحساب مديره
                   </button>
               </div>
               <div className="space-y-2">
                   {!departments.length && <div className="text-center py-6 rounded-lg border border-dashed border-slate-700 text-sm text-slate-500">لا توجد أقسام مسجلة بعد</div>}
-                  {departments.map(department => (
+                  {departments.map(department => {
+                      const manager = users.find(user => user.id === department.managerId) || users.find(user => user.role === 'MANAGER' && user.department === department.name && !isSuperAdminUser(user));
+                      return (
                       <div key={department.id} className="flex items-center justify-between bg-slate-900/70 border border-slate-700 px-4 py-3 rounded-lg">
-                          <span className="text-sm text-white font-medium">{department.name}</span>
+                          <div><span className="text-sm text-white font-medium">{department.name}</span><p className="text-xs text-slate-500 mt-1">{manager?.name || department.managerName || 'دون مدير'}{(manager?.jobTitle || department.managerJobTitle) ? ` • ${manager?.jobTitle || department.managerJobTitle}` : ''}</p></div>
                           <div className="flex gap-2">
                               <button onClick={() => handleRenameDepartment(department.id, department.name)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg" title="تعديل"><Pencil size={16}/></button>
                               <button onClick={() => handleDeleteDepartment(department.id, department.name)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg" title="حذف"><Trash2 size={16}/></button>
                           </div>
                       </div>
-                  ))}
+                  )})}
               </div>
               {departmentMessage && <p className="text-sm text-slate-300 mt-3">{departmentMessage}</p>}
           </div>}
