@@ -41,7 +41,15 @@ const AIAssistant = () => {
   };
 
   return <>
-    <button onClick={() => setOpen(true)} className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-transform" title="NDR AI"><Sparkles size={24}/></button>
+    <div className="fixed bottom-6 left-4 md:left-6 z-40 flex flex-col items-center gap-2">
+      <button onClick={() => setOpen(true)} className="px-3 py-1.5 rounded-xl bg-slate-900/95 border border-purple-500/30 text-[11px] md:text-xs font-bold text-white shadow-xl backdrop-blur-md hover:border-purple-400 hover:text-purple-200 transition-colors whitespace-nowrap">
+        اسأل <span dir="ltr" className="inline-block text-purple-300">NDR AI</span>
+      </button>
+      <button onClick={() => setOpen(true)} className="relative w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl shadow-purple-900/30 flex items-center justify-center hover:scale-105 transition-transform" title="NDR AI" aria-label="فتح NDR AI">
+        <span className="absolute inset-0 rounded-full bg-purple-400/20 animate-ping pointer-events-none" />
+        <Sparkles size={24} className="relative"/>
+      </button>
+    </div>
     {open && <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-3">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
         <div className="p-4 border-b border-slate-700 flex justify-between items-center"><div className="flex gap-2.5 items-center"><div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center"><Bot className="text-purple-400" size={22}/></div><div><div className="flex items-center gap-2"><h3 dir="ltr" className="text-white font-black tracking-wide">NDR AI</h3><span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">خاص</span></div><p className="text-[11px] text-slate-500">مساعد {currentUser.role === 'MANAGER' ? 'المدير' : 'الموظف'} الذكي — ابتكار وتطوير نادر</p></div></div><button onClick={() => setOpen(false)} aria-label="إغلاق"><X className="text-slate-400"/></button></div>
