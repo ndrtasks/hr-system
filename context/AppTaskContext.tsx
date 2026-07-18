@@ -53,7 +53,7 @@ interface TaskContextType {
   addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   updateUser: (user: User) => void;
   deleteUser: (userId: string) => void;
-  addDepartment: (name: string) => Promise<{ success: boolean; message: string }>;
+  addDepartment: (name: string) => Promise<{ success: boolean; message: string; departmentId?: string }>;
   updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
   deleteDepartment: (departmentId: string) => Promise<{ success: boolean; message: string }>;
   createConversation: (title: string, participantIds: string[], type: ConversationType, openingMessage: string) => Promise<{ success: boolean; message: string }>;
@@ -713,7 +713,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              await setDoc(doc(dbRef.current, 'users', userCred.user.uid), { ...safeUser, id: userCred.user.uid, password: '' }); // Don't store password in plain text
              if (safeUser.role === 'MANAGER') {
                  const department = departments.find(item => item.name === safeUser.department);
-                 if (department) await updateDoc(doc(dbRef.current, 'departments', department.id), { managerId: userCred.user.uid });
+                 const departmentId = safeUser.departmentId || department?.id;
+                 if (departmentId) await updateDoc(doc(dbRef.current, 'departments', departmentId), {
+                     managerId: userCred.user.uid,
+                     managerName: safeUser.name,
+                     managerJobTitle: safeUser.jobTitle || `مدير ${safeUser.department}`
+                 });
              }
              sendEmailNotification(safeUser.email, 'تم إنشاء حسابك', `كلمة المرور: ${safeUser.password || '123456'}`);
              return { success: true };
@@ -755,6 +760,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (isLiveMode && dbRef.current) {
         const { id, ...data } = safeUpdatedUser;
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
+        if (safeUpdatedUser.role === 'MANAGER' && safeUpdatedUser.departmentId) {
+            await updateDoc(doc(dbRef.current, 'departments', safeUpdatedUser.departmentId), {
+                managerId: safeUpdatedUser.id,
+                managerName: safeUpdatedUser.name,
+                managerJobTitle: safeUpdatedUser.jobTitle || `مدير ${safeUpdatedUser.department}`
+            });
+        }
     } else {
         setUsers(prev => prev.map(u => u.id === safeUpdatedUser.id ? safeUpdatedUser : u));
     }
@@ -774,9 +786,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!isSuperAdminUser(currentUser)) return { success: false, message: 'إنشاء الأقسام متاح للمدير العام فقط.' };
       if (!cleanName) return { success: false, message: 'أدخل اسم القسم.' };
       if (departments.some(department => department.name.toLowerCase() === cleanName.toLowerCase())) return { success: false, message: 'هذا القسم موجود مسبقًا.' };
-      if (isLiveMode && dbRef.current) await addDoc(collection(dbRef.current, 'departments'), { name: cleanName, createdAt: serverTimestamp() });
-      else setDepartments(previous => [...previous, { id: `department_${Date.now()}`, name: cleanName, createdAt: new Date().toISOString() }]);
-      return { success: true, message: 'تم إنشاء القسم بنجاح.' };
+      if (isLiveMode && dbRef.current) {
+          const departmentRef = await addDoc(collection(dbRef.current, 'departments'), { name: cleanName, createdAt: serverTimestamp() });
+          return { success: true, message: 'تم إنشاء القسم بنجاح.', departmentId: departmentRef.id };
+      }
+      const departmentId = `department_${Date.now()}`;
+      setDepartments(previous => [...previous, { id: departmentId, name: cleanName, createdAt: new Date().toISOString() }]);
+      return { success: true, message: 'تم إنشاء القسم بنجاح.', departmentId };
   };
 
   const updateDepartment = async (departmentId: string, name: string) => {
