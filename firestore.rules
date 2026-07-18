@@ -15,10 +15,7 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return signedIn() && (
-        request.auth.token.email == 'ndrtasks@gmail.com' ||
-        (hasProfile() && profile(request.auth.uid).data.accessLevel == 'SUPER_ADMIN')
-      );
+      return hasProfile() && profile(request.auth.uid).data.accessLevel == 'SUPER_ADMIN';
     }
 
     function isDepartmentManager() {
@@ -51,10 +48,6 @@ service cloud.firestore {
       );
 
       allow create: if isSuperAdmin()
-        || (signedIn()
-          && request.auth.uid == userId
-          && request.auth.token.email == 'ndrtasks@gmail.com'
-          && request.resource.data.accessLevel == 'SUPER_ADMIN')
         || (isDepartmentManager()
           && request.resource.data.role == 'EMPLOYEE'
           && request.resource.data.department == myDepartment()
