@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Calendar, User as UserIcon, Send, MessageSquare, Clock, CheckCircle, AlertTriangle, TimerReset, Check, XCircle, RotateCcw, Paperclip, FileText, Image as ImageIcon, Download, Hourglass, Loader2, Trash2, Edit, UserCog, Save, Copy, Mail, ArrowRightLeft, History } from 'lucide-react';
-import { Task, Status, Attachment, getTaskAssigneeIds, getParticipantStatus } from '../types';
+import { Task, Status, Attachment, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { useTaskContext } from '../context/AppTaskContext';
 import { STATUS_LABELS, STATUS_COLORS } from '../constants';
 import EditTaskModal from './EditTaskModal';
@@ -317,8 +317,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                         onChange={(e) => setSelectedNewAssignee(e.target.value)}
                       >
                           <option value="" disabled>اختر الموظف الجديد...</option>
-                          {users.filter(u => u.role === 'EMPLOYEE' && u.id !== task.assigneeId).map(u => (
-                              <option key={u.id} value={u.id}>{u.name}</option>
+                          {users.filter(u => isSuperAdminUser(currentUser) ? u.id !== currentUser?.id && !isSuperAdminUser(u) : u.role === 'EMPLOYEE' && u.department === currentUser?.department).map(u => (
+                              <option key={u.id} value={u.id}>{u.name} — {u.role === 'MANAGER' ? 'مدير قسم' : (u.jobTitle || 'موظف')} — {u.department}</option>
                           ))}
                       </select>
                       <div className="flex gap-2">
@@ -351,7 +351,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                         return <div key={participant.id} className="flex items-center justify-between bg-slate-900/40 rounded-lg p-2">
                           <div className="flex items-center gap-2">
                             <img src={participant.avatar} alt={participant.name} className="w-8 h-8 rounded-full object-cover" />
-                            <div><p className="text-xs text-white">{participant.name}</p><p className="text-[10px] text-slate-500">{participant.department}</p></div>
+                            <div><p className="text-xs text-white">{participant.name}</p><p className="text-[10px] text-slate-500">{participant.jobTitle || (participant.role === 'MANAGER' ? 'مدير قسم' : 'موظف')} • {participant.department}</p></div>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className={`text-[10px] px-2 py-1 rounded ${completed ? 'bg-emerald-500/15 text-emerald-400' : (pending || pendingReopen) ? 'bg-orange-500/15 text-orange-400' : 'bg-blue-500/15 text-blue-400'}`}>{completed ? 'معتمد' : pending ? 'بانتظار الاعتماد' : pendingReopen ? 'طلب إعادة فتح' : 'قيد التنفيذ'}</span>
