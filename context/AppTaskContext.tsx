@@ -710,7 +710,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              secondaryAuth = getAuth(secondaryApp);
              const userCred = await createUserWithEmailAndPassword(secondaryAuth, safeUser.email, safeUser.password || '123456');
              createdAuthUser = userCred.user;
-             await setDoc(doc(dbRef.current, 'users', userCred.user.uid), { ...safeUser, id: userCred.user.uid, password: '' }); // Don't store password in plain text
+             const profileData = Object.fromEntries(Object.entries({ ...safeUser, id: userCred.user.uid, password: '' }).filter(([, value]) => value !== undefined));
+             await setDoc(doc(dbRef.current, 'users', userCred.user.uid), profileData); // Don't store password in plain text
              if (safeUser.role === 'MANAGER') {
                  const department = departments.find(item => item.name === safeUser.department);
                  const departmentId = safeUser.departmentId || department?.id;
@@ -758,7 +759,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? updatedUser
       : { ...updatedUser, role: 'EMPLOYEE' as const, accessLevel: undefined, department: currentUser.department, departmentId: currentUser.departmentId, managerId: currentUser.id };
     if (isLiveMode && dbRef.current) {
-        const { id, ...data } = safeUpdatedUser;
+        const { id, ...rawData } = safeUpdatedUser;
+        const data = Object.fromEntries(Object.entries(rawData).filter(([, value]) => value !== undefined));
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
         if (safeUpdatedUser.role === 'MANAGER' && safeUpdatedUser.departmentId) {
             await updateDoc(doc(dbRef.current, 'departments', safeUpdatedUser.departmentId), {
