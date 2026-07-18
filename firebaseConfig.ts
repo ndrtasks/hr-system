@@ -1,16 +1,16 @@
 
 // ------------------------------------------------------------------
 // إعدادات الربط مع Google Firebase
-// تم التحديث بالمفاتيح الخاصة بمشروع NDR-Tasks
+// نسخة التطوير المعزولة - NDR-Tasks-Dev
 // ------------------------------------------------------------------
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyB3OlG2m9aG9EBXVKtpZDW9Ny1NIVV3xkw",
-  authDomain: "ndr-tasks.firebaseapp.com",
-  projectId: "ndr-tasks",
-  storageBucket: "ndr-tasks.firebasestorage.app",
-  messagingSenderId: "218367007424",
-  appId: "1:218367007424:web:e0ba4b16cc61ffae296b25"
+  apiKey: "AIzaSyA1M2USOCu2102BfhlaVgn1m5PY7CE8xCQ",
+  authDomain: "ndr-tasks-dev.firebaseapp.com",
+  projectId: "ndr-tasks-dev",
+  storageBucket: "ndr-tasks-dev.firebasestorage.app",
+  messagingSenderId: "727319574506",
+  appId: "1:727319574506:web:3090b0e5220aa74bd42493"
 };
 
 // إعدادات EmailJS (لإرسال الإيميلات الحقيقية)
