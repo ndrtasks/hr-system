@@ -1,14 +1,14 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, Conversation, CommunicationMessage, ConversationType, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
 // Firebase Imports
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, deleteDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, query, where, Unsubscribe, serverTimestamp, arrayUnion } from 'firebase/firestore';
 
 // EmailJS
 import emailjs from '@emailjs/browser';
@@ -21,10 +21,15 @@ interface TimeRemaining {
     severity: 'SAFE' | 'WARNING' | 'CRITICAL' | 'LATE';
 }
 
+const getTimestampValue = (value: any): number => value?.toMillis?.()
+  ?? (value?.seconds ? value.seconds * 1000 : new Date(value || 0).getTime());
+
 interface TaskContextType {
   tasks: Task[];
   users: User[];
   departments: Department[];
+  conversations: Conversation[];
+  communicationMessages: CommunicationMessage[];
   currentUser: User | null;
   notifications: Notification[];
   showLeaderboard: boolean;
@@ -51,6 +56,9 @@ interface TaskContextType {
   addDepartment: (name: string) => Promise<{ success: boolean; message: string }>;
   updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
   deleteDepartment: (departmentId: string) => Promise<{ success: boolean; message: string }>;
+  createConversation: (title: string, participantIds: string[], type: ConversationType, openingMessage: string) => Promise<{ success: boolean; message: string }>;
+  sendCommunicationMessage: (conversationId: string, content: string) => Promise<{ success: boolean; message: string }>;
+  markConversationRead: (conversationId: string) => Promise<void>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   markTaskAsRead: (taskId: string) => void;
@@ -68,6 +76,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [users, setUsers] = useState<User[]>(USERS);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [communicationMessages, setCommunicationMessages] = useState<CommunicationMessage[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
@@ -132,6 +142,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     query(collection(db, 'tasks'), where('assigneeId', '==', profile.id))
                   ];
             const notificationsSource = query(collection(db, 'notifications'), where('userId', '==', profile.id));
+            const conversationsSource = query(collection(db, 'conversations'), where('participantIds', 'array-contains', profile.id));
+            const messagesSource = query(collection(db, 'communicationMessages'), where('participantIds', 'array-contains', profile.id));
 
             const unsubUsers = onSnapshot(usersSource, (snapshot) => {
               const fetchedUsers = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as User));
@@ -160,6 +172,18 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              setNotifications(fetchedNotifs);
             }, error => console.warn('تعذر تحميل الإشعارات', error));
 
+            const unsubConversations = onSnapshot(conversationsSource, snapshot => {
+                const items = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as Conversation));
+                items.sort((a, b) => getTimestampValue(b.lastUpdated) - getTimestampValue(a.lastUpdated));
+                setConversations(items);
+            }, error => console.warn('تعذر تحميل المحادثات', error));
+
+            const unsubMessages = onSnapshot(messagesSource, snapshot => {
+                const items = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as CommunicationMessage));
+                items.sort((a, b) => getTimestampValue(a.timestamp) - getTimestampValue(b.timestamp));
+                setCommunicationMessages(items);
+            }, error => console.warn('تعذر تحميل رسائل التواصل', error));
+
             const departmentsSource = isSuperAdmin
               ? collection(db, 'departments')
               : query(collection(db, 'departments'), where('name', '==', profile.department));
@@ -167,7 +191,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setDepartments(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as Department)));
             }, error => console.warn('تعذر تحميل الأقسام', error));
 
-            dataUnsubscribersRef.current = [unsubUsers, ...unsubTasks, unsubNotifications, unsubDepartments];
+            dataUnsubscribersRef.current = [unsubUsers, ...unsubTasks, unsubNotifications, unsubDepartments, unsubConversations, unsubMessages];
           };
 
           onAuthStateChanged(auth, async (firebaseUser) => {
@@ -780,6 +804,46 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: true, message: 'تم حذف القسم.' };
   };
 
+  const createConversation = async (title: string, participantIds: string[], type: ConversationType, openingMessage: string) => {
+      if (!currentUser || !isSuperAdminUser(currentUser)) return { success: false, message: 'إنشاء المحادثات متاح للمدير العام فقط.' };
+      const recipients = Array.from(new Set(participantIds)).filter(id => id !== currentUser.id && users.some(user => user.id === id));
+      if (!title.trim() || !openingMessage.trim() || recipients.length === 0) return { success: false, message: 'اختر مستلمًا واحدًا على الأقل وأدخل عنوانًا ورسالة.' };
+      const allParticipants = [currentUser.id, ...recipients];
+      if (isLiveMode && dbRef.current) {
+          const conversationRef = await addDoc(collection(dbRef.current, 'conversations'), {
+              title: title.trim(), type, participantIds: allParticipants, createdBy: currentUser.id,
+              createdAt: serverTimestamp(), lastMessage: openingMessage.trim(), lastUpdated: serverTimestamp()
+          });
+          await addDoc(collection(dbRef.current, 'communicationMessages'), {
+              conversationId: conversationRef.id, participantIds: allParticipants, senderId: currentUser.id,
+              senderName: currentUser.name, content: openingMessage.trim(), timestamp: serverTimestamp(), readBy: [currentUser.id]
+          });
+          await Promise.all(recipients.map(id => createNotification(id, type === 'ANNOUNCEMENT' ? 'تعميم من المدير العام' : 'رسالة جديدة من المدير العام', title.trim(), 'INFO')));
+      }
+      return { success: true, message: 'تم إرسال الرسالة بنجاح.' };
+  };
+
+  const sendCommunicationMessage = async (conversationId: string, content: string) => {
+      const conversation = conversations.find(item => item.id === conversationId);
+      if (!currentUser || !conversation || !conversation.participantIds.includes(currentUser.id)) return { success: false, message: 'لا توجد صلاحية لهذه المحادثة.' };
+      if (!content.trim()) return { success: false, message: 'اكتب الرسالة أولًا.' };
+      if (isLiveMode && dbRef.current) {
+          await addDoc(collection(dbRef.current, 'communicationMessages'), {
+              conversationId, participantIds: conversation.participantIds, senderId: currentUser.id,
+              senderName: currentUser.name, content: content.trim(), timestamp: serverTimestamp(), readBy: [currentUser.id]
+          });
+          await updateDoc(doc(dbRef.current, 'conversations', conversationId), { lastMessage: content.trim(), lastUpdated: serverTimestamp() });
+          await Promise.all(conversation.participantIds.filter(id => id !== currentUser.id).map(id => createNotification(id, `رسالة جديدة من ${currentUser.name}`, conversation.title, 'INFO')));
+      }
+      return { success: true, message: 'تم الإرسال.' };
+  };
+
+  const markConversationRead = async (conversationId: string) => {
+      if (!currentUser || !isLiveMode || !dbRef.current) return;
+      const unread = communicationMessages.filter(message => message.conversationId === conversationId && !message.readBy?.includes(currentUser.id));
+      await Promise.all(unread.map(message => updateDoc(doc(dbRef.current!, 'communicationMessages', message.id), { readBy: arrayUnion(currentUser.id) })));
+  };
+
   const markNotificationAsRead = async (id: string) => {
     if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'notifications', id), { read: true });
     else setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -799,10 +863,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <TaskContext.Provider value={{ 
-        tasks, users, departments, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
+        tasks, users, departments, conversations, communicationMessages, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
         login, loginWithCredentials, recoverPassword, changePassword, logout,
         addTask, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, updateTaskDetails, addComment, getTaskById, deleteTask, updateTaskAssignee,
-        addUser, updateUser, deleteUser, addDepartment, updateDepartment, deleteDepartment, sendTaskReminder,
+        addUser, updateUser, deleteUser, addDepartment, updateDepartment, deleteDepartment, createConversation, sendCommunicationMessage, markConversationRead, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
         toggleLeaderboardVisibility, calculateTimeRemaining
