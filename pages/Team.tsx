@@ -2,11 +2,17 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar } from 'lucide-react';
-import { User, Role, Task, getTaskAssigneeIds, getParticipantStatus } from '../types';
+import { User, Role, Task, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
 const Team = () => {
-  const { users, currentUser, addUser, updateUser, deleteUser, tasks, recoverPassword } = useTaskContext();
+  const { users, departments, currentUser, addUser, updateUser, deleteUser, tasks, recoverPassword } = useTaskContext();
+  const isSuperAdmin = isSuperAdminUser(currentUser);
+  const availableDepartments = Array.from(new Set([
+      ...departments.map(department => department.name),
+      ...users.map(user => user.department),
+      currentUser?.department || ''
+  ].filter(Boolean)));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -95,7 +101,7 @@ const Team = () => {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-blue-900/20"
             >
                 <Plus size={18} />
-                <span>إضافة موظف</span>
+                <span>{isSuperAdmin ? 'إضافة مدير أو موظف' : 'إضافة موظف'}</span>
             </button>
         )}
       </div>
@@ -138,7 +144,7 @@ const Team = () => {
                             {user.department}
                         </span>
                         <span className={`text-[10px] px-2 py-0.5 rounded border ${user.role === 'MANAGER' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-700/50 text-slate-400 border-slate-600'}`}>
-                            {user.role === 'MANAGER' ? 'مدير' : 'موظف'}
+                            {isSuperAdminUser(user) ? 'المدير العام' : user.role === 'MANAGER' ? 'مدير قسم' : 'موظف'}
                         </span>
                     </div>
 
@@ -185,7 +191,7 @@ const Team = () => {
                 
                 {user.role === 'MANAGER' && (
                     <div className="px-6 py-4 bg-slate-900/30 border-t border-slate-700/50 flex-1 flex items-center justify-center text-slate-500 text-xs italic">
-                        مشرف النظام - صلاحيات كاملة
+                        {isSuperAdminUser(user) ? 'المدير العام - جميع الأقسام' : `مدير قسم ${user.department}`}
                     </div>
                 )}
 
@@ -200,6 +206,8 @@ const Team = () => {
             onClose={() => setIsModalOpen(false)} 
             onSave={handleSaveUser} 
             onResetPassword={handleResetPassword}
+            currentUser={currentUser}
+            departments={availableDepartments}
           />
       )}
 
@@ -219,13 +227,16 @@ interface UserFormModalProps {
     onClose: () => void;
     onSave: (user: User) => Promise<void>;
     onResetPassword?: (email: string) => void;
+    currentUser: User;
+    departments: string[];
 }
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword }) => {
+const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword, currentUser, departments }) => {
+    const isSuperAdmin = isSuperAdminUser(currentUser);
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
-    const [department, setDepartment] = useState(user?.department || '');
-    const [role, setRole] = useState<Role>(user?.role || 'EMPLOYEE');
+    const [department, setDepartment] = useState(user?.department || (isSuperAdmin ? departments[0] || '' : currentUser.department));
+    const [role, setRole] = useState<Role>(isSuperAdmin ? user?.role || 'EMPLOYEE' : 'EMPLOYEE');
     const [avatar, setAvatar] = useState(user?.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`);
     const [password, setPassword] = useState('');
 
@@ -236,7 +247,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             name,
             email,
             department,
-            role,
+            role: isSuperAdmin ? role : 'EMPLOYEE',
+            accessLevel: isSuperAdmin && role === 'MANAGER' ? 'DEPARTMENT_MANAGER' : undefined,
             avatar,
             // Only include password if it's a new user
             ...(password ? { password } : {})
@@ -249,7 +261,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
             <div className="bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-800 overflow-hidden animate-fade-in">
                 <div className="p-5 border-b border-slate-800 flex justify-between items-center">
                     <h2 className="text-lg font-bold text-white">
-                        {user ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
+                        {user ? 'تعديل بيانات الحساب' : isSuperAdmin ? 'إضافة مدير قسم أو موظف' : 'إضافة موظف جديد'}
                     </h2>
                     <button onClick={onClose} className="text-slate-500 hover:text-white">
                         <X size={20} />
@@ -330,20 +342,20 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-medium text-slate-400 mb-1.5">القسم / الإدارة</label>
-                            <input 
-                                type="text" required value={department} onChange={e => setDepartment(e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                placeholder="مثال: المبيعات"
-                            />
+                            <select required value={department} onChange={e => setDepartment(e.target.value)} disabled={!isSuperAdmin}
+                                className="w-full bg-slate-800 disabled:opacity-70 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none">
+                                {!departments.length && <option value="">أنشئ قسمًا من الإعدادات أولًا</option>}
+                                {departments.map(name => <option key={name} value={name}>{name}</option>)}
+                            </select>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-slate-400 mb-1.5">الصلاحية</label>
-                            <select 
+                            <select disabled={!isSuperAdmin}
                                 value={role} onChange={e => setRole(e.target.value as Role)}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-1 focus:ring-blue-500 outline-none"
                             >
                                 <option value="EMPLOYEE">موظف</option>
-                                <option value="MANAGER">مدير</option>
+                                {isSuperAdmin && <option value="MANAGER">مدير قسم</option>}
                             </select>
                         </div>
                     </div>
