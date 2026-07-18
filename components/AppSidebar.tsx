@@ -1,18 +1,23 @@
 import React from 'react';
-import { LayoutDashboard, CheckSquare, Users, Settings, LogOut, Briefcase, X } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Users, Settings, LogOut, Briefcase, X, Crown, MessageCircle } from 'lucide-react';
 import { useTaskContext } from '../context/AppTaskContext';
 import { NavLink } from 'react-router-dom';
+import { isSuperAdminUser } from '../types';
 
 interface AppSidebarProps {
   onClose?: () => void;
 }
 
 const AppSidebar: React.FC<AppSidebarProps> = ({ onClose }) => {
-  const { logout, currentUser } = useTaskContext();
+  const { logout, currentUser, communicationMessages } = useTaskContext();
+  const superAdmin = isSuperAdminUser(currentUser);
+  const unreadCommunications = communicationMessages.filter(message => !message.readBy?.includes(currentUser?.id || '')).length;
 
   const navItems = [
+    ...(superAdmin ? [{ icon: Crown, label: 'مركز القيادة', path: '/command-center' }] : []),
     { icon: LayoutDashboard, label: 'لوحة التحكم', path: '/' },
     { icon: CheckSquare, label: 'المهام', path: '/tasks' },
+    { icon: MessageCircle, label: 'التواصل', path: '/communications', badge: unreadCommunications },
   ];
 
   if (currentUser?.role === 'MANAGER') {
@@ -55,6 +60,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onClose }) => {
           >
             <item.icon size={20} />
             <span className="font-medium">{item.label}</span>
+            {'badge' in item && Number(item.badge) > 0 && <span className="mr-auto min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">{item.badge}</span>}
           </NavLink>
         ))}
       </nav>
