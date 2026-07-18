@@ -380,7 +380,7 @@ interface UserHistoryModalProps {
 const UserHistoryModal: React.FC<UserHistoryModalProps> = ({ user, tasks, onClose }) => {
     // Filter tasks that are COMPLETED by this user OR Transferred FROM this user
     const historyTasks = tasks.filter(t => {
-        const isCurrentOwnerCompleted = t.assigneeId === user.id && t.status === 'COMPLETED';
+        const isCurrentOwnerCompleted = getTaskAssigneeIds(t).includes(user.id) && getParticipantStatus(t, user.id) === 'COMPLETED';
         const isTransferredFromMe = t.previousAssignees?.includes(user.id) && t.assigneeId !== user.id;
         return isCurrentOwnerCompleted || isTransferredFromMe;
     }).sort((a, b) => new Date(b.lastUpdated || b.dueDate).getTime() - new Date(a.lastUpdated || a.dueDate).getTime());
@@ -412,7 +412,7 @@ const UserHistoryModal: React.FC<UserHistoryModalProps> = ({ user, tasks, onClos
                     ) : (
                         <div className="space-y-3">
                             {historyTasks.map(task => {
-                                const isTransferred = task.assigneeId !== user.id;
+                                const isTransferred = Boolean(task.previousAssignees?.includes(user.id) && !getTaskAssigneeIds(task).includes(user.id));
                                 return (
                                     <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-start gap-4 hover:border-slate-600 transition-colors">
                                         <div className={`mt-1 p-2 rounded-lg ${isTransferred ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
