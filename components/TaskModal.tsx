@@ -170,8 +170,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
     const actions: { label: string, status: Status, color: string, icon?: React.ElementType }[] = [];
 
     if (currentUser.role === 'EMPLOYEE') {
-      if (task.status === 'IN_PROGRESS' || task.status === 'NEW') {
-        actions.push({ label: 'إرسال للاعتماد', status: 'PENDING_REVIEW', color: 'bg-orange-600 hover:bg-orange-700' });
+      const myStatus = getParticipantStatus(task, currentUser.id);
+      if (myStatus !== 'COMPLETED' && task.status !== 'COMPLETED') {
+        actions.push({ label: 'إكمال دوري في المهمة', status: 'COMPLETED', color: 'bg-emerald-600 hover:bg-emerald-700', icon: CheckCircle });
+      } else if (myStatus === 'COMPLETED' && task.status !== 'COMPLETED') {
+        actions.push({ label: 'إعادة فتح دوري', status: 'IN_PROGRESS', color: 'bg-slate-600 hover:bg-slate-700', icon: RotateCcw });
       }
     } else if (currentUser.role === 'MANAGER') {
       if (task.status === 'PENDING_REVIEW') {
@@ -342,6 +345,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                           <span className={`text-[10px] px-2 py-1 rounded ${completed ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>{completed ? 'أكمل دوره' : 'قيد التنفيذ'}</span>
                         </div>;
                       })}
+                      {currentUser?.role === 'MANAGER' && assignees.length === 1 && (
+                        <button onClick={() => setIsReassigning(true)} className="w-full flex items-center justify-center gap-1 text-xs bg-blue-600/10 text-blue-400 px-2 py-1.5 rounded hover:bg-blue-600 hover:text-white transition-colors">
+                          <ArrowRightLeft size={14} /><span>نقل المهمة لموظف آخر</span>
+                        </button>
+                      )}
                     </div>
                     {/* Previous Assignees List */}
                     {previousAssigneeNames && (
