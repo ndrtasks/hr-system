@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, Conversation, CommunicationMessage, ConversationType, getTaskAssigneeIds, getTaskLastActivityTime, isSuperAdminUser } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, Department, LoginPortal, Conversation, CommunicationMessage, ConversationType, getTaskAssigneeIds, getTaskLastActivityTime, getParticipantStatus, isSuperAdminUser } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
@@ -51,7 +51,7 @@ interface TaskContextType {
   addComment: (taskId: string, content: string, attachments?: Attachment[]) => void;
   getTaskById: (id: string) => Task | undefined;
   addUser: (user: User) => Promise<{ success: boolean; message?: string }>;
-  updateUser: (user: User) => void;
+  updateUser: (user: User) => Promise<{ success: boolean; message: string }>;
   deleteUser: (userId: string) => void;
   addDepartment: (name: string) => Promise<{ success: boolean; message: string; departmentId?: string }>;
   updateDepartment: (departmentId: string, name: string) => Promise<{ success: boolean; message: string }>;
@@ -200,25 +200,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           onAuthStateChanged(auth, async (firebaseUser) => {
              if (firebaseUser) {
-               if (firebaseUser.email?.toLowerCase() === 'ndrtasks@gmail.com') {
-                   if (pendingLoginPortalRef.current && pendingLoginPortalRef.current !== 'SUPER_ADMIN') {
-                       await signOut(auth);
-                       setCurrentUser(null);
-                       return;
-                   }
-                   const adminUser: User = {
-                        id: firebaseUser.uid,
-                        name: 'مدير النظام',
-                        email: firebaseUser.email!,
-                        role: 'MANAGER',
-                        accessLevel: 'SUPER_ADMIN',
-                        avatar: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff',
-                        department: 'الإدارة العليا'
-                   };
-                   try { await setDoc(doc(db, 'users', firebaseUser.uid), adminUser, { merge: true }); } catch (e) {}
-                   setCurrentUser(adminUser);
-                   subscribeToUserData(adminUser);
-               } else {
                    try {
                        const docSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
                        if (docSnap.exists()) {
@@ -226,7 +207,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                            const profile = storedProfile.role === 'MANAGER' && !storedProfile.accessLevel
                              ? { ...storedProfile, accessLevel: 'DEPARTMENT_MANAGER' as const }
                              : storedProfile;
-                           const actualPortal: LoginPortal = profile.role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+                           const actualPortal: LoginPortal = isSuperAdminUser(profile) ? 'SUPER_ADMIN' : profile.role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
                            if (pendingLoginPortalRef.current && pendingLoginPortalRef.current !== actualPortal) {
                                await signOut(auth);
                                setCurrentUser(null);
@@ -244,7 +225,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                        await signOut(auth);
                        setCurrentUser(null);
                    }
-               }
              } else {
                setCurrentUser(null);
              }
@@ -347,28 +327,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithCredentials = async (email: string, pass: string, portal: LoginPortal): Promise<{ success: boolean; message?: string }> => {
     if (isLiveMode && authRef.current) {
-      const normalizedRequestedEmail = email.trim().toLowerCase();
-      if (portal === 'SUPER_ADMIN' && normalizedRequestedEmail !== 'ndrtasks@gmail.com') {
-          return { success: false, message: 'بوابة المدير العام مخصصة حصريًا لحساب مالك النظام.' };
-      }
-      if (portal !== 'SUPER_ADMIN' && normalizedRequestedEmail === 'ndrtasks@gmail.com') {
-          return { success: false, message: 'حساب مالك النظام يدخل من بوابة المدير العام فقط.' };
-      }
       pendingLoginPortalRef.current = portal;
       try {
         const credential = await signInWithEmailAndPassword(authRef.current, email, pass);
-        const normalizedEmail = credential.user.email?.toLowerCase() || email.toLowerCase();
-        let actualPortal: LoginPortal;
-        if (normalizedEmail === 'ndrtasks@gmail.com') {
-            actualPortal = 'SUPER_ADMIN';
-        } else {
-            const profileSnapshot = await getDoc(doc(dbRef.current, 'users', credential.user.uid));
-            if (!profileSnapshot.exists()) {
-                await signOut(authRef.current);
-                return { success: false, message: 'لا يوجد ملف صلاحيات لهذا الحساب. راجع مدير النظام.' };
-            }
-            actualPortal = profileSnapshot.data().role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+        const profileSnapshot = await getDoc(doc(dbRef.current, 'users', credential.user.uid));
+        if (!profileSnapshot.exists()) {
+            await signOut(authRef.current);
+            return { success: false, message: 'لا يوجد ملف صلاحيات لهذا الحساب. راجع مدير النظام.' };
         }
+        const loginProfile = { id: profileSnapshot.id, ...profileSnapshot.data() } as User;
+        const actualPortal: LoginPortal = isSuperAdminUser(loginProfile) ? 'SUPER_ADMIN' : loginProfile.role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
         if (actualPortal !== portal) {
             await signOut(authRef.current);
             const portalNames = { SUPER_ADMIN: 'بوابة المدير العام', MANAGER: 'بوابة الإدارة', EMPLOYEE: 'بوابة الموظفين' };
@@ -756,13 +724,29 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = async (updatedUser: User) => {
-    if (!currentUser || currentUser.role !== 'MANAGER') return;
+    if (!currentUser || currentUser.role !== 'MANAGER') return { success: false, message: 'لا توجد صلاحية لتعديل الحساب.' };
     const existing = users.find(user => user.id === updatedUser.id);
-    if (!isSuperAdminUser(currentUser) && (!existing || existing.department !== currentUser.department || existing.role !== 'EMPLOYEE')) return;
+    if (!existing) return { success: false, message: 'الحساب غير موجود.' };
+    if (!isSuperAdminUser(currentUser) && (existing.department !== currentUser.department || existing.role !== 'EMPLOYEE')) return { success: false, message: 'لا توجد صلاحية لتعديل هذا الحساب.' };
     const safeUpdatedUser = isSuperAdminUser(currentUser)
-      ? updatedUser
+      ? { ...updatedUser, accessLevel: existing.accessLevel }
       : { ...updatedUser, role: 'EMPLOYEE' as const, accessLevel: undefined, department: currentUser.department, departmentId: currentUser.departmentId, managerId: currentUser.id };
     if (isLiveMode && dbRef.current) {
+        if (safeUpdatedUser.email.trim().toLowerCase() !== existing.email.trim().toLowerCase()) {
+            if (!isSuperAdminUser(currentUser) || !authRef.current?.currentUser) return { success: false, message: 'تغيير البريد متاح للمدير العام فقط.' };
+            try {
+                const token = await authRef.current.currentUser.getIdToken(true);
+                const response = await fetch('/api/account-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ userId: safeUpdatedUser.id, email: safeUpdatedUser.email.trim().toLowerCase() })
+                });
+                const result = await response.json();
+                if (!response.ok) return { success: false, message: result.message || 'تعذر تغيير البريد الإلكتروني.' };
+            } catch (_) {
+                return { success: false, message: 'تعذر الاتصال بخدمة تحديث البريد. تحقق من إعداد Firebase Admin في Vercel.' };
+            }
+        }
         const { id, ...rawData } = safeUpdatedUser;
         const data = Object.fromEntries(Object.entries(rawData).filter(([, value]) => value !== undefined));
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
@@ -781,7 +765,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
         setUsers(prev => prev.map(u => u.id === safeUpdatedUser.id ? safeUpdatedUser : u));
     }
-    if (currentUser?.id === updatedUser.id) setCurrentUser(updatedUser);
+    if (currentUser?.id === updatedUser.id) setCurrentUser(safeUpdatedUser);
+    return { success: true, message: 'تم تحديث بيانات الحساب وتسجيل الدخول بنجاح.' };
   };
 
   const deleteUser = async (userId: string) => {
