@@ -41,7 +41,11 @@ const Team = () => {
 
   const handleSaveUser = async (u: User) => {
     if (editingUser) {
-      await updateUser(u);
+      const result = await updateUser(u);
+      if (!result.success) {
+        alert(result.message);
+        return;
+      }
     } else {
       const result = await addUser(u);
       if (!result.success) {
@@ -208,7 +212,7 @@ const Team = () => {
             onClose={() => setIsModalOpen(false)} 
             onSave={handleSaveUser} 
             onResetPassword={handleResetPassword}
-            currentUser={currentUser}
+            currentUser={currentUser!}
             departments={departments}
           />
       )}
