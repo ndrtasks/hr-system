@@ -105,6 +105,10 @@ service cloud.firestore {
       allow create: if signedIn() && (
         request.resource.data.userId == request.auth.uid ||
         isSuperAdmin() ||
+        ('conversationId' in request.resource.data
+          && exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId))
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId)).data.participantIds
+          && request.resource.data.userId in get(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId)).data.participantIds) ||
         (hasProfile()
           && exists(/databases/$(database)/documents/users/$(request.resource.data.userId))
           && profile(request.resource.data.userId).data.department == myDepartment())
