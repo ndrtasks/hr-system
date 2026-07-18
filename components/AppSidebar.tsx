@@ -43,6 +43,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onClose }) => {
         <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white p-1">
             <X size={24} />
         </button>
+        <div className="pt-3 mt-2 border-t border-slate-800 text-center">
+          <p dir="ltr" className="text-xs font-black tracking-widest text-violet-300">NDR WORK</p>
+          <p className="text-[10px] text-slate-500 mt-1">فكرة وتصميم وتطوير نادر</p>
+          <p className="text-[9px] text-slate-600 mt-0.5">© 2026 جميع الحقوق محفوظة</p>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
