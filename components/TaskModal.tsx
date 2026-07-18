@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Calendar, User as UserIcon, Send, MessageSquare, Clock, CheckCircle, AlertTriangle, TimerReset, Check, XCircle, RotateCcw, Paperclip, FileText, Image as ImageIcon, Download, Hourglass, Loader2, Trash2, Edit, UserCog, Save, Copy, Mail, ArrowRightLeft, History } from 'lucide-react';
-import { Task, Status, Attachment } from '../types';
+import { Task, Status, Attachment, getTaskAssigneeIds, getParticipantStatus } from '../types';
 import { useTaskContext } from '../context/AppTaskContext';
 import { STATUS_LABELS, STATUS_COLORS } from '../constants';
 
@@ -31,6 +31,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
 
   const task = getTaskById(taskId);
   const assignee = users.find(u => u.id === task?.assigneeId);
+  const assignees = task ? getTaskAssigneeIds(task).map(id => users.find(u => u.id === id)).filter(Boolean) : [];
 
   // Mark task as read when modal opens
   useEffect(() => {
@@ -294,7 +295,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
 
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-800 relative group">
-              <span className="text-xs text-slate-500 block mb-2">الموظف المسؤول</span>
+              <span className="text-xs text-slate-500 block mb-2">المشاركون في المهمة ({assignees.length})</span>
               
               {/* Reassign UI */}
               {isReassigning ? (
@@ -330,24 +331,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                   </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <img src={assignee?.avatar} alt={assignee?.name} className="w-8 h-8 rounded-full object-cover" />
-                            <div>
-                            <p className="text-sm font-medium text-slate-200">{assignee?.name}</p>
-                            <p className="text-xs text-slate-500">{assignee?.department}</p>
-                            </div>
-                        </div>
-                        {currentUser?.role === 'MANAGER' && (
-                            <button 
-                                onClick={() => setIsReassigning(true)}
-                                className="flex items-center gap-1 text-xs bg-blue-600/10 text-blue-400 px-2 py-1 rounded hover:bg-blue-600 hover:text-white transition-colors"
-                                title="تحويل المهمة لموظف آخر"
-                            >
-                                <ArrowRightLeft size={14} />
-                                <span>نقل</span>
-                            </button>
-                        )}
+                    <div className="space-y-2">
+                      {assignees.map((participant: any) => {
+                        const completed = getParticipantStatus(task, participant.id) === 'COMPLETED';
+                        return <div key={participant.id} className="flex items-center justify-between bg-slate-900/40 rounded-lg p-2">
+                          <div className="flex items-center gap-2">
+                            <img src={participant.avatar} alt={participant.name} className="w-8 h-8 rounded-full object-cover" />
+                            <div><p className="text-xs text-white">{participant.name}</p><p className="text-[10px] text-slate-500">{participant.department}</p></div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-1 rounded ${completed ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>{completed ? 'أكمل دوره' : 'قيد التنفيذ'}</span>
+                        </div>;
+                      })}
                     </div>
                     {/* Previous Assignees List */}
                     {previousAssigneeNames && (
