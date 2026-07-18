@@ -12,7 +12,7 @@ interface TaskModalProps {
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
-  const { getTaskById, users, addComment, updateTaskStatus, resolveParticipantCompletion, deleteTask, updateTaskAssignee, currentUser, requestTaskExtension, resolveExtensionRequest, calculateTimeRemaining, markTaskAsRead } = useTaskContext();
+  const { getTaskById, users, addComment, updateTaskStatus, resolveParticipantCompletion, resolveParticipantReopen, deleteTask, updateTaskAssignee, currentUser, requestTaskExtension, resolveExtensionRequest, calculateTimeRemaining, markTaskAsRead } = useTaskContext();
   const [newComment, setNewComment] = useState('');
   const [commentAttachments, setCommentAttachments] = useState<Attachment[]>([]);
   const [showExtensionForm, setShowExtensionForm] = useState(false);
@@ -178,6 +178,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
         actions.push({ label: 'إكمال دوري في المهمة', status: 'COMPLETED', color: 'bg-emerald-600 hover:bg-emerald-700', icon: CheckCircle });
       } else if (myStatus === 'PENDING_APPROVAL' && task.status !== 'COMPLETED') {
         actions.push({ label: 'سحب طلب الاعتماد', status: 'IN_PROGRESS', color: 'bg-slate-600 hover:bg-slate-700', icon: RotateCcw });
+      } else if (myStatus === 'PENDING_REOPEN') {
+        // الطلب قيد مراجعة المدير ولا يغيّر الحالة مباشرة.
       } else if (myStatus === 'COMPLETED' && task.status !== 'COMPLETED') {
         actions.push({ label: 'إعادة فتح دوري', status: 'IN_PROGRESS', color: 'bg-slate-600 hover:bg-slate-700', icon: RotateCcw });
       }
@@ -345,16 +347,21 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                         const participantStatus = getParticipantStatus(task, participant.id);
                         const completed = participantStatus === 'COMPLETED';
                         const pending = participantStatus === 'PENDING_APPROVAL';
+                        const pendingReopen = participantStatus === 'PENDING_REOPEN';
                         return <div key={participant.id} className="flex items-center justify-between bg-slate-900/40 rounded-lg p-2">
                           <div className="flex items-center gap-2">
                             <img src={participant.avatar} alt={participant.name} className="w-8 h-8 rounded-full object-cover" />
                             <div><p className="text-xs text-white">{participant.name}</p><p className="text-[10px] text-slate-500">{participant.department}</p></div>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`text-[10px] px-2 py-1 rounded ${completed ? 'bg-emerald-500/15 text-emerald-400' : pending ? 'bg-orange-500/15 text-orange-400' : 'bg-blue-500/15 text-blue-400'}`}>{completed ? 'معتمد' : pending ? 'بانتظار الاعتماد' : 'قيد التنفيذ'}</span>
+                            <span className={`text-[10px] px-2 py-1 rounded ${completed ? 'bg-emerald-500/15 text-emerald-400' : (pending || pendingReopen) ? 'bg-orange-500/15 text-orange-400' : 'bg-blue-500/15 text-blue-400'}`}>{completed ? 'معتمد' : pending ? 'بانتظار الاعتماد' : pendingReopen ? 'طلب إعادة فتح' : 'قيد التنفيذ'}</span>
                             {currentUser?.role === 'MANAGER' && pending && <>
                               <button onClick={() => resolveParticipantCompletion(task.id, participant.id, true)} className="p-1 rounded bg-emerald-600 text-white" title="اعتماد"><Check size={12}/></button>
                               <button onClick={() => resolveParticipantCompletion(task.id, participant.id, false)} className="p-1 rounded bg-red-600 text-white" title="رفض"><X size={12}/></button>
+                            </>}
+                            {currentUser?.role === 'MANAGER' && pendingReopen && <>
+                              <button onClick={() => resolveParticipantReopen(task.id, participant.id, true)} className="p-1 rounded bg-emerald-600 text-white" title="الموافقة على إعادة الفتح"><Check size={12}/></button>
+                              <button onClick={() => resolveParticipantReopen(task.id, participant.id, false)} className="p-1 rounded bg-red-600 text-white" title="رفض إعادة الفتح"><X size={12}/></button>
                             </>}
                             {currentUser?.role === 'MANAGER' && participantStatus === 'IN_PROGRESS' &&
                               <button onClick={() => resolveParticipantCompletion(task.id, participant.id, true)} className="text-[10px] px-2 py-1 rounded bg-emerald-600 text-white" title="إكمال دور الموظف بواسطة المدير">إكمال دوره</button>}
