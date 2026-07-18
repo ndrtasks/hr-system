@@ -143,6 +143,7 @@ export interface Notification {
   read: boolean;
   timestamp: string;
   taskId?: string;
+  conversationId?: string;
 }
 
 export interface Stats {
