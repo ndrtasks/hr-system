@@ -14,6 +14,13 @@ const AIAssistant = () => {
   const employeePrompts = ['رتب أولوياتي اليوم', 'ضع خطة تنفيذ لمهامي', 'اكتب تحديثاً احترافياً للمدير', 'اقترح الخطوة التالية'];
   const prompts = currentUser.role === 'MANAGER' ? managerPrompts : employeePrompts;
 
+  const cleanAssistantText = (text: string) => text
+    .replace(/\*\*/g, '')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
   const ask = async (text = question) => {
     if (!text.trim()) return;
     setLoading(true); setAnswer(''); setQuestion(text);
@@ -28,7 +35,7 @@ const AIAssistant = () => {
         AI_QUOTA_EXCEEDED: 'تم بلوغ حصة Gemini الحالية. حاول لاحقاً أو راجع الحصة والفوترة في Google AI Studio.',
         AI_PROVIDER_UNAVAILABLE: 'خدمة Gemini غير متاحة حالياً. حاول مرة أخرى بعد قليل.',
       };
-      setAnswer(data.answer || safeErrors[data.error] || 'تعذر الاتصال بالمساعد حالياً.');
+      setAnswer(cleanAssistantText(data.answer || safeErrors[data.error] || 'تعذر الاتصال بالمساعد حالياً.'));
     } catch (_) { setAnswer('تعذر الاتصال بالمساعد حالياً.'); }
     finally { setLoading(false); }
   };
@@ -41,7 +48,7 @@ const AIAssistant = () => {
         <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-2">{prompts.map(prompt => <button key={prompt} onClick={() => ask(prompt)} className="text-xs text-right p-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-blue-600/20 border border-slate-700">{prompt}</button>)}</div>
           {loading && <div className="p-5 flex justify-center"><Loader2 className="animate-spin text-purple-400"/></div>}
-          {answer && <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-slate-200 whitespace-pre-wrap leading-7">{answer}</div>}
+          {answer && <div dir="rtl" className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-right text-slate-200 whitespace-pre-wrap leading-8">{answer}</div>}
         </div>
         <form onSubmit={event => { event.preventDefault(); ask(); }} className="p-3 border-t border-slate-700 flex gap-2"><input value={question} onChange={e => setQuestion(e.target.value)} placeholder="اسأل المساعد..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 text-white outline-none"/><button disabled={loading || !question.trim()} className="bg-blue-600 text-white p-3 rounded-lg disabled:opacity-50"><Send size={18}/></button></form>
       </div>
