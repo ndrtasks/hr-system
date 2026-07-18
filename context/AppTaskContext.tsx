@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { Task, User, Comment, Status, Notification, Attachment, Role } from '../types';
+import { Task, User, Comment, Status, Notification, Attachment, Role, getTaskAssigneeIds } from '../types';
 import { INITIAL_TASKS, USERS } from '../constants';
 import { firebaseConfig, emailJSConfig } from '../firebaseConfig';
 
@@ -358,14 +358,40 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setTasks(prev => [task, ...prev]);
     }
     markTaskAsRead(task.id);
-    createNotification(task.assigneeId, 'مهمة جديدة', `مهمة جديدة: ${task.title}`, 'INFO', task.id);
-    const assignee = users.find(u => u.id === task.assigneeId);
-    if (assignee) sendEmailNotification(assignee.email, `مهمة جديدة: ${task.title}`, `تم إسناد مهمة جديدة إليك.`);
+    getTaskAssigneeIds(task).forEach(assigneeId => {
+      createNotification(assigneeId, 'مهمة جديدة', `مهمة جديدة: ${task.title}`, 'INFO', task.id);
+      const assignee = users.find(u => u.id === assigneeId);
+      if (assignee) sendEmailNotification(assignee.email, `مهمة جديدة: ${task.title}`, `تم إسناد مهمة جديدة إليك ضمن فريق عمل.`);
+    });
   };
 
   const updateTaskStatus = async (taskId: string, status: Status) => {
+    const task = getTaskById(taskId);
+    if (!task || !currentUser) return;
     const statusLog: Comment = { id: `sys_${Date.now()}`, userId: 'system', userName: 'النظام', userAvatar: '', content: `تم تغيير الحالة إلى ${status}`, timestamp: new Date().toISOString(), isSystem: true };
     const lastUpdated = new Date().toISOString();
+
+    // الموظف يحدّث إنجازه الشخصي فقط، بدون التأثير على بقية المشاركين.
+    if (currentUser.role === 'EMPLOYEE' && getTaskAssigneeIds(task).includes(currentUser.id)) {
+      const participantStatuses = {
+        ...(task.participantStatuses || {}),
+        [currentUser.id]: {
+          status: status === 'COMPLETED' ? 'COMPLETED' as const : 'IN_PROGRESS' as const,
+          ...(status === 'COMPLETED' ? { completedAt: lastUpdated } : {})
+        }
+      };
+      const allCompleted = getTaskAssigneeIds(task).every(id => participantStatuses[id]?.status === 'COMPLETED');
+      const taskStatus: Status = allCompleted ? 'PENDING_REVIEW' : 'IN_PROGRESS';
+      const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أكمل ${currentUser.name} الجزء الخاص به` : `أعاد ${currentUser.name} فتح الجزء الخاص به` };
+      const updates = { participantStatuses, status: taskStatus, comments: [...task.comments, personalLog], lastUpdated };
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), updates);
+      else setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
+      if (status === 'COMPLETED' && task.createdBy !== currentUser.id) {
+        createNotification(task.createdBy, 'إنجاز مشارك', `أكمل ${currentUser.name} دوره في: ${task.title}`, 'SUCCESS', task.id);
+      }
+      markTaskAsRead(taskId);
+      return;
+    }
 
     if (isLiveMode && dbRef.current) {
         const taskRef = doc(dbRef.current, 'tasks', taskId);
@@ -375,7 +401,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     markTaskAsRead(taskId);
     
-    const task = getTaskById(taskId);
     if (task && status === 'COMPLETED' && task.createdBy !== currentUser?.id) {
          let targetManagerId = task.createdBy;
          if (!users.find(u => u.id === targetManagerId)) targetManagerId = getManagerId() || targetManagerId;
@@ -438,8 +463,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const sendTaskReminder = async (taskId: string) => {
       const task = getTaskById(taskId);
       if (!task) return;
-      const assignee = users.find(u => u.id === task.assigneeId);
-      if (assignee) sendEmailNotification(assignee.email, `🔔 تذكير بالمهمة: ${task.title}`, `هذا تذكير لمتابعة المهمة: ${task.title}.`);
+      getTaskAssigneeIds(task).forEach(id => {
+        if (task.participantStatuses?.[id]?.status === 'COMPLETED') return;
+        const assignee = users.find(u => u.id === id);
+        if (assignee) sendEmailNotification(assignee.email, `🔔 تذكير بالمهمة: ${task.title}`, `هذا تذكير لمتابعة المهمة: ${task.title}.`);
+      });
   };
 
   const addComment = async (taskId: string, content: string, attachments: Attachment[] = []) => {
@@ -456,8 +484,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
              // Smart Notifications logic
              const recipients = new Set<string>();
-             // Always notify current assignee if I am not him
-             if (task.assigneeId !== currentUser.id) recipients.add(task.assigneeId);
+             // كل المشاركين يشاهدون نفس المحادثة ويتلقون تحديثاتها.
+             getTaskAssigneeIds(task).forEach(id => { if (id !== currentUser.id) recipients.add(id); });
              // Always notify manager/creator if I am not him
              if (task.createdBy !== currentUser.id) recipients.add(task.createdBy);
              // Notify previous assignees? Optional, but good for context. Let's stick to current active participants.
@@ -504,7 +532,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       markTaskAsRead(taskId);
       const task = getTaskById(taskId);
-      if (task) createNotification(task.assigneeId, 'رد على طلب التمديد', approved ? 'تمت الموافقة' : 'تم الرفض', approved ? 'SUCCESS' : 'WARNING', task.id);
+      if (task) getTaskAssigneeIds(task).forEach(id => createNotification(id, 'رد على طلب التمديد', approved ? 'تمت الموافقة' : 'تم الرفض', approved ? 'SUCCESS' : 'WARNING', task.id));
   };
 
   const addUser = async (user: User) => {
