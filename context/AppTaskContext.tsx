@@ -762,6 +762,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { id, ...rawData } = safeUpdatedUser;
         const data = Object.fromEntries(Object.entries(rawData).filter(([, value]) => value !== undefined));
         await setDoc(doc(dbRef.current, 'users', id), data, { merge: true });
+        if (existing?.role === 'MANAGER' && existing.departmentId && existing.departmentId !== safeUpdatedUser.departmentId) {
+            await updateDoc(doc(dbRef.current, 'departments', existing.departmentId), {
+                managerId: '', managerName: '', managerJobTitle: ''
+            });
+        }
         if (safeUpdatedUser.role === 'MANAGER' && safeUpdatedUser.departmentId) {
             await updateDoc(doc(dbRef.current, 'departments', safeUpdatedUser.departmentId), {
                 managerId: safeUpdatedUser.id,
@@ -779,7 +784,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const target = users.find(user => user.id === userId);
     if (!currentUser || currentUser.role !== 'MANAGER' || userId === currentUser.id) return;
     if (!isSuperAdminUser(currentUser) && (!target || target.role !== 'EMPLOYEE' || target.department !== currentUser.department)) return;
-    if (isLiveMode && dbRef.current) await deleteDoc(doc(dbRef.current, 'users', userId));
+    if (isLiveMode && dbRef.current) {
+        await deleteDoc(doc(dbRef.current, 'users', userId));
+        if (target?.role === 'MANAGER' && target.departmentId) {
+            await updateDoc(doc(dbRef.current, 'departments', target.departmentId), {
+                managerId: '', managerName: '', managerJobTitle: ''
+            });
+        }
+    }
     else setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
