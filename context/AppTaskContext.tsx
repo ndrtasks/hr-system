@@ -47,6 +47,7 @@ interface TaskContextType {
   logout: () => void;
   addTask: (task: Task) => void;
   updateTaskStatus: (taskId: string, status: Status) => void;
+  resolveParticipantCompletion: (taskId: string, participantId: string, approved: boolean) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskAssignee: (taskId: string, newAssigneeId: string) => Promise<void>;
   sendTaskReminder: (taskId: string) => Promise<void>;
@@ -414,13 +415,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const participantStatuses = {
         ...(task.participantStatuses || {}),
         [currentUser.id]: {
-          status: status === 'COMPLETED' ? 'COMPLETED' as const : 'IN_PROGRESS' as const,
-          ...(status === 'COMPLETED' ? { completedAt: lastUpdated } : {})
+          status: status === 'COMPLETED' ? 'PENDING_APPROVAL' as const : 'IN_PROGRESS' as const
         }
       };
-      const allCompleted = getTaskAssigneeIds(task).every(id => participantStatuses[id]?.status === 'COMPLETED');
-      const taskStatus: Status = allCompleted ? 'PENDING_REVIEW' : 'IN_PROGRESS';
-      const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أكمل ${currentUser.name} الجزء الخاص به` : `أعاد ${currentUser.name} فتح الجزء الخاص به` };
+      const allSubmitted = getTaskAssigneeIds(task).every(id => ['PENDING_APPROVAL', 'COMPLETED'].includes(participantStatuses[id]?.status));
+      const taskStatus: Status = allSubmitted ? 'PENDING_REVIEW' : 'IN_PROGRESS';
+      const personalLog: Comment = { ...statusLog, content: status === 'COMPLETED' ? `أرسل ${currentUser.name} إنجازه لاعتماد المدير` : `أعاد ${currentUser.name} فتح الجزء الخاص به` };
       const updates = { participantStatuses, status: taskStatus, comments: [...task.comments, personalLog], lastUpdated };
       if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), updates);
       else setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
@@ -446,6 +446,33 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
          const manager = users.find(u => u.id === targetManagerId);
          if (manager) sendEmailNotification(manager.email, `تم إنجاز مهمة: ${task.title}`);
     }
+  };
+
+  const resolveParticipantCompletion = async (taskId: string, participantId: string, approved: boolean) => {
+      const task = getTaskById(taskId);
+      if (!task || currentUser?.role !== 'MANAGER') return;
+      const participant = users.find(user => user.id === participantId);
+      const lastUpdated = new Date().toISOString();
+      const participantStatuses = {
+          ...(task.participantStatuses || {}),
+          [participantId]: approved
+            ? { status: 'COMPLETED' as const, completedAt: lastUpdated, approvedById: currentUser.id }
+            : { status: 'IN_PROGRESS' as const }
+      };
+      const allApproved = getTaskAssigneeIds(task).every(id => participantStatuses[id]?.status === 'COMPLETED' && Boolean(participantStatuses[id]?.approvedById));
+      const stillPending = getTaskAssigneeIds(task).some(id => participantStatuses[id]?.status === 'PENDING_APPROVAL' || (participantStatuses[id]?.status === 'COMPLETED' && !participantStatuses[id]?.approvedById));
+      const nextStatus: Status = allApproved ? 'COMPLETED' : stillPending ? 'PENDING_REVIEW' : 'IN_PROGRESS';
+      const log: Comment = {
+          id: `sys_participant_${Date.now()}`,
+          userId: 'system', userName: 'النظام', userAvatar: '', isSystem: true,
+          content: approved ? `اعتمد المدير إنجاز ${participant?.name || 'الموظف'}` : `أعاد المدير دور ${participant?.name || 'الموظف'} للتنفيذ`,
+          timestamp: lastUpdated
+      };
+      const updates = { participantStatuses, status: nextStatus, comments: [...task.comments, log], lastUpdated };
+      if (isLiveMode && dbRef.current) await updateDoc(doc(dbRef.current, 'tasks', taskId), updates);
+      else setTasks(previous => previous.map(item => item.id === taskId ? { ...item, ...updates } : item));
+      createNotification(participantId, approved ? 'تم اعتماد إنجازك' : 'تمت إعادة المهمة', approved ? `اعتمد المدير دورك في: ${task.title}` : `أعاد المدير دورك للتنفيذ في: ${task.title}`, approved ? 'SUCCESS' : 'WARNING', task.id);
+      markTaskAsRead(taskId);
   };
 
   const deleteTask = async (taskId: string) => {
@@ -541,7 +568,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const requestTaskExtension = async (taskId: string, newDate: string, reason: string) => {
-     const extensionRequest = { requestedDate: newDate, reason, status: 'PENDING', requestDate: new Date().toISOString() };
+     const extensionRequest = { requestedDate: newDate, reason, status: 'PENDING', requestDate: new Date().toISOString(), requestedById: currentUser?.id, requestedByName: currentUser?.name };
      const lastUpdated = new Date().toISOString();
      if (isLiveMode && dbRef.current) {
           const taskRef = doc(dbRef.current, 'tasks', taskId);
@@ -649,7 +676,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <TaskContext.Provider value={{ 
         tasks, users, currentUser, notifications, showLeaderboard, isLiveMode, taskReadStatus,
         login, loginWithCredentials, recoverPassword, logout, 
-        addTask, updateTaskStatus, addComment, getTaskById, deleteTask, updateTaskAssignee,
+        addTask, updateTaskStatus, resolveParticipantCompletion, addComment, getTaskById, deleteTask, updateTaskAssignee,
         addUser, updateUser, deleteUser, sendTaskReminder,
         markNotificationAsRead, markAllNotificationsAsRead, markTaskAsRead,
         sendEmailNotification, simulateEmail, requestTaskExtension, resolveExtensionRequest,
