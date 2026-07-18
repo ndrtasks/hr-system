@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Task, getTaskAssigneeIds, getParticipantStatus } from '../types';
+import { Task, getTaskAssigneeIds, getParticipantStatus, getTaskLastActivityTime } from '../types';
 import { PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants';
 import { Plus, Clock, Filter, ChevronRight, Search, Hourglass, MessageSquare, Bell, Trash2, Loader2, ArrowRightLeft, History } from 'lucide-react';
 import TaskModal from '../components/TaskModal';
@@ -31,8 +31,8 @@ const TasksPage = () => {
       return matchesStatus && matchesSearch;
   }).sort((a, b) => {
       // آخر رسالة أو تغيير أو مرفق يرفع المهمة للأعلى عند المدير والموظف.
-      const latestA = new Date(a.lastUpdated || 0).getTime();
-      const latestB = new Date(b.lastUpdated || 0).getTime();
+      const latestA = getTaskLastActivityTime(a);
+      const latestB = getTaskLastActivityTime(b);
       return latestB - latestA;
   });
 
@@ -145,7 +145,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, assignee, onClick, currentUser 
 
   // Unread Logic: Compare Task Last Updated vs My Last Read Time
   const lastReadTime = taskReadStatus[task.id] || "0";
-  const hasUnreadActivity = new Date(task.lastUpdated || 0).getTime() > new Date(lastReadTime).getTime();
+  const hasUnreadActivity = getTaskLastActivityTime(task) > new Date(lastReadTime).getTime();
 
   const handleReminder = (e: React.MouseEvent) => {
       e.stopPropagation();
