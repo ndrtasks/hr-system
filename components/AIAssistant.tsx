@@ -1,0 +1,44 @@
+import React, { useState } from 'react';
+import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react';
+import { useTaskContext } from '../context/AppTaskContext';
+
+const AIAssistant = () => {
+  const { currentUser, tasks } = useTaskContext();
+  const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+  if (!currentUser) return null;
+
+  const managerPrompts = ['لخص حالة العمل اليوم', 'اقترح رسالة تحفيزية للفريق', 'حدد المهام التي تحتاج متابعة', 'اكتب رسالة لتحسين الأداء'];
+  const employeePrompts = ['رتب أولوياتي اليوم', 'ضع خطة تنفيذ لمهامي', 'اكتب تحديثاً احترافياً للمدير', 'اقترح الخطوة التالية'];
+  const prompts = currentUser.role === 'MANAGER' ? managerPrompts : employeePrompts;
+
+  const ask = async (text = question) => {
+    if (!text.trim()) return;
+    setLoading(true); setAnswer(''); setQuestion(text);
+    try {
+      const res = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: currentUser.role, userName: currentUser.name, question: text, tasks: tasks.map(task => ({ title: task.title, description: task.description, status: task.status, dueDate: task.dueDate, priority: task.priority })) }) });
+      const data = await res.json();
+      setAnswer(data.answer || (data.error === 'AI_NOT_CONFIGURED' ? 'يلزم إضافة GEMINI_API_KEY في إعدادات Vercel لتشغيل المساعد.' : 'تعذر الاتصال بالمساعد حالياً.'));
+    } catch (_) { setAnswer('تعذر الاتصال بالمساعد حالياً.'); }
+    finally { setLoading(false); }
+  };
+
+  return <>
+    <button onClick={() => setOpen(true)} className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-transform" title="المساعد الذكي"><Sparkles size={24}/></button>
+    {open && <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-3">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+        <div className="p-4 border-b border-slate-700 flex justify-between items-center"><div className="flex gap-2 items-center"><Bot className="text-purple-400"/><div><h3 className="text-white font-bold">المساعد الذكي</h3><p className="text-[11px] text-slate-500">مساعد {currentUser.role === 'MANAGER' ? 'المدير' : 'الموظف'} — لا يغير البيانات تلقائياً</p></div></div><button onClick={() => setOpen(false)}><X className="text-slate-400"/></button></div>
+        <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-2">{prompts.map(prompt => <button key={prompt} onClick={() => ask(prompt)} className="text-xs text-right p-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-blue-600/20 border border-slate-700">{prompt}</button>)}</div>
+          {loading && <div className="p-5 flex justify-center"><Loader2 className="animate-spin text-purple-400"/></div>}
+          {answer && <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-slate-200 whitespace-pre-wrap leading-7">{answer}</div>}
+        </div>
+        <form onSubmit={event => { event.preventDefault(); ask(); }} className="p-3 border-t border-slate-700 flex gap-2"><input value={question} onChange={e => setQuestion(e.target.value)} placeholder="اسأل المساعد..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 text-white outline-none"/><button disabled={loading || !question.trim()} className="bg-blue-600 text-white p-3 rounded-lg disabled:opacity-50"><Send size={18}/></button></form>
+      </div>
+    </div>}
+  </>;
+};
+
+export default AIAssistant;
