@@ -46,7 +46,6 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 space-y-2">
-        {currentUser?.role === 'MANAGER' && (
             <NavLink 
             to="/settings"
             className={({ isActive }) => `
@@ -57,7 +56,6 @@ const Sidebar = () => {
             <Settings size={20} />
             <span>الإعدادات</span>
             </NavLink>
-        )}
         <button 
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 rounded-lg w-full text-red-400 hover:bg-red-500/10 transition-colors"
