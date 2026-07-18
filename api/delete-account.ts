@@ -1,4 +1,5 @@
-// Deployment bundle: complete account deletion UI + API\nimport { cert, getApps, initializeApp } from 'firebase-admin/app';
+// Secure server-side deletion of Firebase Authentication and related Firestore data.
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
@@ -150,6 +151,11 @@ export default async function handler(request: any, response: any) {
     const code = error?.code || error?.message;
     if (code === 'FIREBASE_ADMIN_NOT_CONFIGURED') return response.status(503).json({ message: 'بيانات Firebase Admin غير مضافة إلى Vercel.' });
     console.error('delete-account', code);
-    return response.status(500).json({ message: 'تعذر حذف الحساب بالكامل. حاول مرة أخرى.' });
+    const safeMessage = code === 'auth/insufficient-permission'
+      ? 'حساب Firebase Admin لا يملك صلاحية حذف المستخدمين.'
+      : code === 'app/invalid-credential'
+        ? 'بيانات Firebase Admin غير صحيحة. راجع متغيرات Vercel.'
+        : 'تعذر حذف الحساب بالكامل. راجع سجل الخادم ثم حاول مرة أخرى.';
+    return response.status(500).json({ message: safeMessage });
   }
 }
