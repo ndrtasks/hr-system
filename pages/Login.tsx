@@ -47,9 +47,9 @@ const Login = () => {
     }
   };
 
-  const handleRecovery = (e: React.FormEvent) => {
+  const handleRecovery = async (e: React.FormEvent) => {
       e.preventDefault();
-      const result = recoverPassword(recoveryEmail);
+      const result = await recoverPassword(recoveryEmail);
       if (result.success) setRecoveryMessage(result.message);
       else setError(result.message);
   };
