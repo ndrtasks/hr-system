@@ -289,6 +289,12 @@ const Login = () => {
 
       {view === 'SELECTION' ? renderSelection() : renderLoginForm()}
 
+      <div className="z-10 mt-8 text-center">
+        <p dir="ltr" className="text-xs font-black tracking-[0.22em] text-violet-300/80">NDR WORK</p>
+        <p className="text-[10px] text-slate-500 mt-1">فكرة وتصميم وتطوير نادر</p>
+        <p className="text-[9px] text-slate-700 mt-1">© 2026 جميع الحقوق محفوظة</p>
+      </div>
+
     </div>
   );
 };
