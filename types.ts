@@ -1,6 +1,7 @@
 
 export type Role = 'MANAGER' | 'EMPLOYEE';
 export type AccessLevel = 'SUPER_ADMIN' | 'DEPARTMENT_MANAGER';
+export type LoginPortal = 'SUPER_ADMIN' | 'MANAGER' | 'EMPLOYEE';
 
 export interface Department {
   id: string;
