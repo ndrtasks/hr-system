@@ -356,6 +356,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ taskId, onClose }) => {
                               <button onClick={() => resolveParticipantCompletion(task.id, participant.id, true)} className="p-1 rounded bg-emerald-600 text-white" title="اعتماد"><Check size={12}/></button>
                               <button onClick={() => resolveParticipantCompletion(task.id, participant.id, false)} className="p-1 rounded bg-red-600 text-white" title="رفض"><X size={12}/></button>
                             </>}
+                            {currentUser?.role === 'MANAGER' && participantStatus === 'IN_PROGRESS' &&
+                              <button onClick={() => resolveParticipantCompletion(task.id, participant.id, true)} className="text-[10px] px-2 py-1 rounded bg-emerald-600 text-white" title="إكمال دور الموظف بواسطة المدير">إكمال دوره</button>}
+                            {currentUser?.role === 'MANAGER' && completed && task.status !== 'COMPLETED' &&
+                              <button onClick={() => resolveParticipantCompletion(task.id, participant.id, false)} className="text-[10px] px-2 py-1 rounded bg-slate-600 text-white" title="إعادة دور الموظف للتنفيذ">إعادة فتح</button>}
                           </div>
                         </div>;
                       })}
