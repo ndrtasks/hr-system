@@ -136,7 +136,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const taskSources = isSuperAdmin
               ? [collection(db, 'tasks')]
               : isManager
-                ? [query(collection(db, 'tasks'), where('department', '==', profile.department))]
+                ? [
+                    query(collection(db, 'tasks'), where('department', '==', profile.department)),
+                    query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id)),
+                    query(collection(db, 'tasks'), where('assigneeId', '==', profile.id))
+                  ]
                 : [
                     query(collection(db, 'tasks'), where('assigneeIds', 'array-contains', profile.id)),
                     query(collection(db, 'tasks'), where('assigneeId', '==', profile.id))
@@ -445,7 +449,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addTask = async (task: Task) => {
     if (!currentUser) return;
-    const effectiveTask = isSuperAdminUser(currentUser) ? task : { ...task, department: currentUser.department, createdBy: currentUser.id };
+    const effectiveTask = isSuperAdminUser(currentUser) ? task : { ...task, department: currentUser.department, departments: [currentUser.department], createdBy: currentUser.id };
     const lastUpdated = new Date().toISOString();
     if (isLiveMode && dbRef.current) {
         const { id, ...taskData } = effectiveTask;
