@@ -1,0 +1,118 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && (
+        request.auth.token.email == 'ndrtasks@gmail.com' ||
+        (hasProfile() && profile(request.auth.uid).data.accessLevel == 'SUPER_ADMIN')
+      );
+    }
+
+    function isDepartmentManager() {
+      return hasProfile()
+        && profile(request.auth.uid).data.role == 'MANAGER'
+        && profile(request.auth.uid).data.accessLevel == 'DEPARTMENT_MANAGER';
+    }
+
+    function myDepartment() {
+      return profile(request.auth.uid).data.department;
+    }
+
+    function taskParticipant(task) {
+      return signedIn() && (
+        task.assigneeId == request.auth.uid ||
+        (task.assigneeIds is list && task.assigneeIds.hasAny([request.auth.uid]))
+      );
+    }
+
+    match /departments/{departmentId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (
+        request.auth.uid == userId ||
+        isSuperAdmin() ||
+        (hasProfile() && resource.data.department == myDepartment())
+      );
+
+      allow create: if isSuperAdmin()
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.auth.token.email == 'ndrtasks@gmail.com'
+          && request.resource.data.accessLevel == 'SUPER_ADMIN')
+        || (isDepartmentManager()
+          && request.resource.data.role == 'EMPLOYEE'
+          && request.resource.data.department == myDepartment()
+          && request.resource.data.managerId == request.auth.uid);
+
+      allow update: if isSuperAdmin()
+        || (isDepartmentManager()
+          && resource.data.role == 'EMPLOYEE'
+          && resource.data.department == myDepartment()
+          && request.resource.data.role == 'EMPLOYEE'
+          && request.resource.data.department == myDepartment())
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'avatar']));
+
+      allow delete: if isSuperAdmin()
+        || (isDepartmentManager()
+          && resource.data.role == 'EMPLOYEE'
+          && resource.data.department == myDepartment());
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isSuperAdmin()
+        || (isDepartmentManager() && resource.data.department == myDepartment())
+        || taskParticipant(resource.data)
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+
+      allow create: if isSuperAdmin()
+        || (isDepartmentManager()
+          && request.resource.data.department == myDepartment()
+          && request.resource.data.createdBy == request.auth.uid);
+
+      allow update: if isSuperAdmin()
+        || (isDepartmentManager() && resource.data.department == myDepartment())
+        || (taskParticipant(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'participantStatuses', 'comments', 'extensionRequest',
+            'lastUpdated', 'status'
+          ]));
+
+      allow delete: if isSuperAdmin()
+        || (isDepartmentManager() && resource.data.department == myDepartment());
+    }
+
+    match /notifications/{notificationId} {
+      allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && (
+        request.resource.data.userId == request.auth.uid ||
+        isSuperAdmin() ||
+        (hasProfile()
+          && exists(/databases/$(database)/documents/users/$(request.resource.data.userId))
+          && profile(request.resource.data.userId).data.department == myDepartment())
+      );
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
