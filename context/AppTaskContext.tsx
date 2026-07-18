@@ -418,8 +418,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const createNotification = async (userId: string, title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING', taskId?: string) => {
-    const newNotif: Notification = { id: `n_${Date.now()}`, userId, title, message, type, read: false, timestamp: new Date().toISOString(), taskId };
+  const createNotification = async (userId: string, title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING', taskId?: string, conversationId?: string) => {
+    const newNotif: Notification = { id: `n_${Date.now()}`, userId, title, message, type, read: false, timestamp: new Date().toISOString(), taskId, conversationId };
     if (isLiveMode && dbRef.current) {
         const { id, ...notifData } = newNotif;
         await addDoc(collection(dbRef.current, 'notifications'), notifData);
@@ -818,7 +818,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               conversationId: conversationRef.id, participantIds: allParticipants, senderId: currentUser.id,
               senderName: currentUser.name, content: openingMessage.trim(), timestamp: serverTimestamp(), readBy: [currentUser.id]
           });
-          await Promise.all(recipients.map(id => createNotification(id, type === 'ANNOUNCEMENT' ? 'تعميم من المدير العام' : 'رسالة جديدة من المدير العام', title.trim(), 'INFO')));
+          await Promise.all(recipients.map(id => createNotification(id, type === 'ANNOUNCEMENT' ? 'تعميم من المدير العام' : 'رسالة جديدة من المدير العام', title.trim(), 'INFO', undefined, conversationRef.id)));
       }
       return { success: true, message: 'تم إرسال الرسالة بنجاح.' };
   };
@@ -833,7 +833,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               senderName: currentUser.name, content: content.trim(), timestamp: serverTimestamp(), readBy: [currentUser.id]
           });
           await updateDoc(doc(dbRef.current, 'conversations', conversationId), { lastMessage: content.trim(), lastUpdated: serverTimestamp() });
-          await Promise.all(conversation.participantIds.filter(id => id !== currentUser.id).map(id => createNotification(id, `رسالة جديدة من ${currentUser.name}`, conversation.title, 'INFO')));
+          await Promise.all(conversation.participantIds.filter(id => id !== currentUser.id).map(id => createNotification(id, `رسالة جديدة من ${currentUser.name}`, conversation.title, 'INFO', undefined, conversationId)));
       }
       return { success: true, message: 'تم الإرسال.' };
   };
