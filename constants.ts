@@ -15,7 +15,7 @@ export const USERS: User[] = [
     name: 'مدير النظام',
     email: 'alfattani@hipit.edu.sa',
     role: 'MANAGER',
-    avatar: 'https://i.pravatar.cc/150?u=u1',
+    avatar: 'https://i.pravatar.cc/150?u=u2',
     department: 'الإدارة العامة'
   },
   {
@@ -23,7 +23,7 @@ export const USERS: User[] = [
     name: 'نادر النادر',
     email: 'nader@company.com',
     role: 'EMPLOYEE',
-    avatar: 'https://i.pravatar.cc/150?u=u2',
+    avatar: 'https://i.pravatar.cc/150?u=u3',
     department: 'الموارد البشرية'
   },
   {
@@ -31,7 +31,7 @@ export const USERS: User[] = [
     name: 'سارة محمد',
     email: 'sara@company.com',
     role: 'EMPLOYEE',
-    avatar: 'https://i.pravatar.cc/150?u=u3',
+    avatar: 'https://i.pravatar.cc/150?u=u4',
     department: 'التصميم'
   },
   {
@@ -39,7 +39,7 @@ export const USERS: User[] = [
     name: 'خالد أحمد',
     email: 'khaled@company.com',
     role: 'EMPLOYEE',
-    avatar: 'https://i.pravatar.cc/150?u=u4',
+    avatar: 'https://i.pravatar.cc/150?u=u5',
     department: 'التطوير'
   }
 ];
