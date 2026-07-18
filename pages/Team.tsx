@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '../context/AppTaskContext';
-import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, KeyRound, Send, ExternalLink, FileText, ArrowRightLeft, Calendar, Loader2 } from 'lucide-react';
+import { Mail, Briefcase, Plus, X, Edit2, Trash2, User as UserIcon, ShieldCheck, CheckCircle, AlertCircle, Clock, FileText, ArrowRightLeft, Calendar, Loader2 } from 'lucide-react';
 import { User, Role, Task, Department, DepartmentTaskMigrationPlan, getTaskAssigneeIds, getParticipantStatus, isSuperAdminUser } from '../types';
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '../constants';
 
 const Team = () => {
-  const { users, departments, currentUser, addUser, updateUser, deleteUser, tasks, recoverPassword } = useTaskContext();
+  const { users, departments, currentUser, addUser, updateUser, deleteUser, tasks } = useTaskContext();
   const isSuperAdmin = isSuperAdminUser(currentUser);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -73,13 +73,6 @@ const Team = () => {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  const handleResetPassword = async (email: string) => {
-      if (window.confirm(`سيتم إرسال رابط رسمي من Google إلى ${email} لتعيين كلمة مرور جديدة.\n\nهل تريد المتابعة؟`)) {
-          const result = await recoverPassword(email);
-          alert(result.message);
-      }
-  };
-
   const getUserStats = (userId: string) => {
     const userTasks = tasks.filter(t => getTaskAssigneeIds(t).includes(userId));
     const total = userTasks.length;
@@ -132,9 +125,9 @@ const Team = () => {
             <div key={user.id} className="bg-slate-800 rounded-xl p-0 border border-slate-700 group relative hover:border-slate-500 transition-all overflow-hidden flex flex-col">
                 <div className="p-6 pb-4 flex flex-col items-center text-center relative">
                     {currentUser?.role === 'MANAGER' && (
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                        <div className="absolute top-4 right-4 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex gap-2">
                             {user.role === 'EMPLOYEE' && (
-                                <button 
+                                <button type="button"
                                     onClick={() => handleHistoryClick(user)} 
                                     className="p-1.5 bg-slate-700 text-emerald-400 rounded-lg hover:bg-slate-600"
                                     title="سجل المهام المنجزة"
@@ -142,11 +135,11 @@ const Team = () => {
                                     <FileText size={14} />
                                 </button>
                             )}
-                            <button onClick={() => handleEditClick(user)} className="p-1.5 bg-slate-700 text-blue-400 rounded-lg hover:bg-slate-600" title="تعديل">
+                            <button type="button" onClick={() => handleEditClick(user)} className="p-1.5 bg-slate-700 text-blue-400 rounded-lg hover:bg-slate-600" title="تعديل">
                                 <Edit2 size={14} />
                             </button>
                             {user.id !== currentUser.id && (
-                                <button disabled={deletingUserId === user.id} onClick={() => handleDeleteClick(user)} className="p-1.5 bg-slate-700 text-red-400 rounded-lg hover:bg-slate-600 disabled:opacity-50" title="حذف الحساب بالكامل">
+                                <button type="button" disabled={deletingUserId === user.id} onClick={() => handleDeleteClick(user)} className="p-2 bg-red-500/15 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/25 disabled:opacity-50" title="حذف الحساب بالكامل" aria-label={`حذف حساب ${user.name}`}>
                                     {deletingUserId === user.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                                 </button>
                             )}
@@ -225,7 +218,6 @@ const Team = () => {
             user={editingUser} 
             onClose={() => setIsModalOpen(false)} 
             onSave={handleSaveUser} 
-            onResetPassword={handleResetPassword}
             currentUser={currentUser!}
             departments={departments}
             users={users}
@@ -285,14 +277,13 @@ interface UserFormModalProps {
     user: User | null;
     onClose: () => void;
     onSave: (user: User, migrationPlan?: DepartmentTaskMigrationPlan) => Promise<void>;
-    onResetPassword?: (email: string) => void;
     currentUser: User;
     departments: Department[];
     users: User[];
     tasks: Task[];
 }
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, onResetPassword, currentUser, departments, users, tasks }) => {
+const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, currentUser, departments, users, tasks }) => {
     const isSuperAdmin = isSuperAdminUser(currentUser);
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -417,46 +408,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave, on
                                 placeholder="مثال: 123456"
                             />
                         </div>
-                    ) : (
-                        onResetPassword && (
-                            <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-xl">
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-                                        <KeyRound size={18} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-sm font-bold text-white mb-1">إعادة تعيين كلمة المرور</h4>
-                                        <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                                            لأسباب أمنية، لا يمكن تغيير كلمة المرور مباشرة من هنا.
-                                            <br/>
-                                            <span className="text-amber-400">• الخيار 1:</span> إرسال رابط رسمي للموظف ليغيرها بنفسه.
-                                            <br/>
-                                            <span className="text-amber-400">• الخيار 2:</span> تغييرها يدوياً (إجبارياً) من لوحة تحكم Firebase.
-                                        </p>
-                                        
-                                        <button 
-                                            type="button"
-                                            onClick={() => onResetPassword(user.email)}
-                                            className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors mb-2"
-                                        >
-                                            <Send size={14} />
-                                            إرسال رابط التعيين (الخيار 1)
-                                        </button>
-                                        
-                                        <a 
-                                            href="https://console.firebase.google.com/" 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors"
-                                        >
-                                            <ExternalLink size={14} />
-                                            الذهاب لـ Firebase (الخيار 2)
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    )}
+                    ) : null}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
