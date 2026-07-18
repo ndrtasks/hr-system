@@ -31,6 +31,7 @@ const SettingsPage = () => {
   const [cleanupCounts, setCleanupCounts] = useState<CleanupCounts | null>(null);
   const [cleanupConfirmation, setCleanupConfirmation] = useState('');
   const [cleanupAcknowledged, setCleanupAcknowledged] = useState(false);
+  const [cleanupDepartments, setCleanupDepartments] = useState(false);
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState('');
 
@@ -47,13 +48,14 @@ const SettingsPage = () => {
       if (!cleanupAcknowledged || cleanupConfirmation !== 'حذف بيانات التجربة') return;
       setCleanupLoading(true);
       setCleanupMessage('');
-      const result = await cleanupTestData('execute', cleanupConfirmation);
+      const result = await cleanupTestData('execute', cleanupConfirmation, cleanupDepartments);
       setCleanupLoading(false);
       setCleanupMessage(result.message || (result.success ? 'تم التنظيف بنجاح.' : 'تعذر التنظيف.'));
       if (result.success) {
           setCleanupCounts(null);
           setCleanupConfirmation('');
           setCleanupAcknowledged(false);
+          setCleanupDepartments(false);
       }
   };
 
@@ -303,11 +305,13 @@ const SettingsPage = () => {
                           ['المحادثات', cleanupCounts.conversations], ['الرسائل', cleanupCounts.messages], ['الأقسام الباقية', cleanupCounts.departmentsRetained]
                       ].map(([label, count]) => <div key={String(label)} className="bg-slate-900/70 border border-slate-700 rounded-lg p-3"><div className="text-xl font-bold text-white">{count}</div><div className="text-xs text-slate-400">{label}</div></div>)}
                   </div>
+                  <label className="flex items-start gap-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-sm text-slate-300"><input type="checkbox" checked={cleanupDepartments} onChange={event => setCleanupDepartments(event.target.checked)} className="mt-1"/><span><strong className="block text-white">حذف الأقسام أيضًا</strong>فعّل هذا الخيار إذا كانت الأقسام الحالية تجريبية وتريد البدء من الصفر. بدون تفعيله ستبقى الأقسام فقط.</span></label>
+                  {cleanupDepartments && <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-200">سيتم حذف {cleanupCounts.departmentsRetained} قسم بالإضافة إلى جميع بيانات التجربة.</div>}
                   <label className="flex items-start gap-2 text-sm text-slate-300"><input type="checkbox" checked={cleanupAcknowledged} onChange={event => setCleanupAcknowledged(event.target.checked)} className="mt-1"/><span>أفهم أن هذا الإجراء نهائي ولا يمكن استرجاع البيانات المحذوفة.</span></label>
                   <div><label className="block text-xs text-slate-400 mb-1.5">للتأكيد اكتب: <span className="text-red-300 font-bold">حذف بيانات التجربة</span></label><input value={cleanupConfirmation} onChange={event => setCleanupConfirmation(event.target.value)} className="w-full bg-slate-900 border border-red-900 rounded-lg px-4 py-2.5 text-white outline-none focus:border-red-500" /></div>
                   <div className="flex flex-wrap gap-2">
                       <button onClick={handleCleanupExecute} disabled={cleanupLoading || !cleanupAcknowledged || cleanupConfirmation !== 'حذف بيانات التجربة'} className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2">{cleanupLoading ? <Loader2 size={18} className="animate-spin"/> : <Trash2 size={18}/>} حذف بيانات التجربة نهائيًا</button>
-                      <button onClick={() => { setCleanupCounts(null); setCleanupConfirmation(''); setCleanupAcknowledged(false); }} disabled={cleanupLoading} className="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700">إلغاء</button>
+                      <button onClick={() => { setCleanupCounts(null); setCleanupConfirmation(''); setCleanupAcknowledged(false); setCleanupDepartments(false); }} disabled={cleanupLoading} className="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700">إلغاء</button>
                   </div>
               </div>}
               {cleanupMessage && <p className="text-sm text-slate-300 mt-3">{cleanupMessage}</p>}
