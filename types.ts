@@ -7,6 +7,8 @@ export interface Department {
   id: string;
   name: string;
   managerId?: string;
+  managerName?: string;
+  managerJobTitle?: string;
   createdAt?: any;
 }
 
@@ -45,6 +47,7 @@ export interface User {
   department: string;
   departmentId?: string;
   managerId?: string;
+  jobTitle?: string;
 }
 
 export const isManagerUser = (user?: User | null) => user?.role === 'MANAGER';
