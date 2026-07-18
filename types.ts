@@ -72,9 +72,11 @@ export const getTaskAssigneeIds = (task: Task): string[] => {
 };
 
 export const getParticipantStatus = (task: Task, userId: string): ParticipantStatus => {
+  // إغلاق المدير للمهمة يعني اكتمالها لجميع المشاركين.
+  if (task.status === 'COMPLETED') return 'COMPLETED';
   const saved = task.participantStatuses?.[userId]?.status;
   if (saved) return saved;
-  return task.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS';
+  return 'IN_PROGRESS';
 };
 
 export interface Notification {
