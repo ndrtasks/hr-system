@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NDR Recruitment LAB</title>
+  <link rel="stylesheet" href="style.css?v=20260819-2100">
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>متابعة تغطية الشواغر <b>LAB</b></h1>
+      <p>نسخة مستقلة للتجربة والتطوير</p>
+    </div>
+    <div class="actions">
+      <button id="aiBtn" class="aiMain">✦ NDR AI</button>
+      <button id="add" class="primary">+ إضافة شاغر</button>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <article>إجمالي الشواغر<b id="total">0</b></article>
+    <article>تمت التغطية<b id="done">0</b></article>
+    <article>المتبقي<b id="left">0</b></article>
+    <article>الإنجاز<b id="pct">0%</b></article>
+  </section>
+
+  <div class="toolbar">
+    <button id="filter">عرض المتبقي فقط</button>
+    <button id="report">تقرير ذكي</button>
+    <span class="sync" id="sync">جاري الاتصال...</span>
+  </div>
+
+  <section id="grid" class="grid"></section>
+</main>
+
+<aside id="panel" class="panel" aria-hidden="true">
+  <div class="phead">
+    <b>✦ NDR AI — Gemini</b>
+    <button id="close" aria-label="إغلاق">×</button>
+  </div>
+  <div class="quick">
+    <button data-q="أعطني ملخص الإنجاز وحالة التوظيف">ملخص الإنجاز</button>
+    <button data-q="من يحتاج متابعة الآن ولماذا؟">من يحتاج متابعة؟</button>
+    <button data-q="حلل مراحل المرشحين والاختناقات">تحليل المراحل</button>
+  </div>
+  <div id="chat" class="chat">
+    <div class="bot">اسألني عن أي مرشح أو تقرير. أفهم الاسم الجزئي والتقريبي وأبحث في البيانات المستخرجة من الملفات.</div>
+  </div>
+  <form id="form" class="form">
+    <textarea id="q" placeholder="مثال: وين وصلنا مع أحمد؟"></textarea>
+    <button>إرسال</button>
+  </form>
+</aside>
+
+<dialog id="dlg">
+  <h3 id="dt">إضافة شاغر</h3>
+  <input id="jt" placeholder="المسمى الوظيفي">
+  <input id="tr" placeholder="التخصص / المسار">
+  <input id="qty" type="number" min="1" max="20" value="1">
+  <div>
+    <button id="save" class="primary">حفظ</button>
+    <button id="cancel">إلغاء</button>
+  </div>
+</dialog>
+
+<script src="app.js?v=20260819-2100" defer></script>
+</body>
+</html>
