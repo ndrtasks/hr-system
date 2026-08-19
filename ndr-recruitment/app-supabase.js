@@ -1,6 +1,6 @@
 const SB='https://tewqupnzozirpjiboelf.supabase.co',KEY='sb_publishable_PLzJvcgLybBUQFMNJ_jGKA_l-c0LuZU';
 const H={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
-const stages=['بحث واستقطاب','فرز السير','مقابلات','Demo Class','عرض وظيفي','تم التغطية'];
+const stages=['بحث واستقطاب','فرز السير','مقابلة أولية','مقابلة فنية','Demo Class','اعتماد نهائي','إرسال عرض','انتظار موافقة','مباشرة','تم التغطية','متوقف'];
 const candidateStages=['جديد','تم التواصل','فرز أولي','مقابلة أولية','مقابلة فنية','Demo Class','مرشح نهائي','عرض وظيفي','احتياط','مرفوض'];
 let jobs={},candidates={},showOpen=false,editingId=null,loading=false,dirty=false;
 const $=s=>document.querySelector(s),total=$('#total'),done=$('#done'),left=$('#left'),pct=$('#pct'),bar=$('#bar'),grid=$('#grid'),dot=$('#dot'),syncText=$('#syncText');
