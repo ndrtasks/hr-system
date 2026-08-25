@@ -4,10 +4,22 @@ const BASE='https://ndr-hr-tools-5okazrqhd-ndrs-projects-cfdc98d2.vercel.app';
 
 export default async function handler(req,res){
   try{
+    const share=String(req.query?.share||'').trim();
+    let cookie='';
+    let authStatus=null;
+    if(share){
+      const auth=await fetch(`${BASE}/?_vercel_share=${encodeURIComponent(share)}`,{redirect:'manual'});
+      authStatus=auth.status;
+      const sets=typeof auth.headers.getSetCookie==='function'?auth.headers.getSetCookie():[auth.headers.get('set-cookie')].filter(Boolean);
+      cookie=sets.map(s=>String(s).split(';')[0]).filter(Boolean).join('; ');
+      if(!cookie)throw new Error(`share handshake did not return auth cookie (HTTP ${auth.status})`);
+    }
     const parts=await Promise.all(Array.from({length:12},(_,k)=>k+1).map(async i=>{
-      const r=await fetch(`${BASE}/c${i}.txt`,{redirect:'follow'});
-      if(!r.ok)throw new Error(`chunk ${i}: HTTP ${r.status}`);
-      return (await r.text()).replace(/\s+/g,'');
+      const r=await fetch(`${BASE}/c${i}.txt`,{redirect:'manual',headers:cookie?{cookie}:{}});
+      if(!r.ok)throw new Error(`chunk ${i}: HTTP ${r.status} ${r.headers.get('location')||''}`);
+      const t=await r.text();
+      if(i===1&&!t.trim().startsWith('H4sI'))throw new Error(`chunk 1 is not gzip-base64; content-type=${r.headers.get('content-type')||''}`);
+      return t.replace(/\s+/g,'');
     }));
     let html=gunzipSync(Buffer.from(parts.join(''),'base64')).toString('utf8');
     const sourceLength=html.length;
@@ -51,7 +63,7 @@ export default async function handler(req,res){
       sickTiersPresent:html.includes("{len:30, rate:1.00")&&html.includes("{len:60, rate:0.75")&&html.includes("{len:30, rate:0.00"),
       sscoFullMarker:html.includes('2122')
     };
-    res.status(200).json({ok:true,sourceLength,patchedLength:html.length,patches,checks});
+    res.status(200).json({ok:true,authStatus,sourceLength,patchedLength:html.length,patches,checks});
   }catch(e){
     res.status(500).json({ok:false,error:String(e&&e.message||e)});
   }
