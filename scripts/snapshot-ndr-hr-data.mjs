@@ -1,9 +1,10 @@
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 const BASE='https://ndr-ref-audit.vercel.app/api/data?name=';
 const REF='https://hr-tools.monef.workers.dev/';
 const OUT=join(process.cwd(),'public','ndr-hr-v2','data');
+const VENDOR=join(process.cwd(),'public','ndr-hr-v2','vendor');
 const specs=[
   {name:'OCC',file:'occ.json',count:2122,kind:'Saudi Standard Classification of Occupations mapping'},
   {name:'NQ_DATA',file:'localization.json',count:15,kind:'Occupational localization decision map'},
@@ -12,6 +13,10 @@ const specs=[
 ];
 
 await mkdir(OUT,{recursive:true});
+await mkdir(VENDOR,{recursive:true});
+await copyFile(join(process.cwd(),'node_modules','xlsx','dist','xlsx.full.min.js'),join(VENDOR,'xlsx.full.min.js'));
+console.log('vendor XLSX: local copy ready');
+
 const manifest={generatedAt:new Date().toISOString(),source:'validated build-time snapshots',datasets:{}};
 for(const s of specs){
   const r=await fetch(BASE+encodeURIComponent(s.name),{headers:{accept:'application/json'}});
