@@ -1,0 +1,116 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NDR HR Tools — Audited RC</title><style>body{font-family:Tahoma,Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#f7f8fa;color:#123}.box{text-align:center;padding:28px}.spin{width:34px;height:34px;border:4px solid #dbe3ea;border-top-color:#0c8a83;border-radius:50%;animation:s 1s linear infinite;margin:0 auto 14px}@keyframes s{to{transform:rotate(360deg)}}</style></head><body><div class="box"><div class="spin"></div><div>جاري تشغيل منصة NDR للموارد البشرية...</div></div><script>
+(async()=>{try{
+const BASE='https://ndr-hr-tools-5okazrqhd-ndrs-projects-cfdc98d2.vercel.app';
+const ps=Array.from({length:12},(_,k)=>k+1).map(i=>fetch(BASE+'/c'+i+'.txt',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error('chunk '+i);return r.text()}));
+const b64=(await Promise.all(ps)).join('').replace(/\s+/g,'');
+const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+const ds=new DecompressionStream('gzip');let html=await new Response(new Blob([u]).stream().pipeThrough(ds)).text();
+
+const PATCHES=[];
+function patchExact(before,after,label,required=true){
+  const count=html.split(before).length-1;
+  PATCHES.push({label,count});
+  if(required&&count<1)throw new Error('تعذر تطبيق إصلاح إلزامي: '+label);
+  if(count)html=html.split(before).join(after);
+}
+function patchRegex(re,after,label,required=true){
+  const m=html.match(re),count=m?m.length:0;
+  PATCHES.push({label,count});
+  if(required&&count<1)throw new Error('تعذر تطبيق إصلاح إلزامي: '+label);
+  if(count)html=html.replace(re,after);
+}
+
+/* ===== 1) RTL numeric isolation ===== */
+patchExact('</head>',`<style>
+.field input[type="number"]{direction:ltr;text-align:right;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.amount strong bdi{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+#ndr-legal-basis-bar{position:sticky;top:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:9px 14px;background:#fff8df;border-bottom:1px solid #eadba3;color:#4a3a00;font-size:12px}
+#ndr-legal-basis-bar select{border:1px solid #d7c781;border-radius:9px;padding:6px 9px;background:white;color:#263238;font-weight:700}
+#ndr-legal-basis-bar small{opacity:.78}
+</style></head>`,'تنسيق الأرقام RTL');
+patchExact("<strong>${typeof amount==='number'?fmt(amount):amount}</strong>","<strong><bdi dir=\"ltr\">${typeof amount==='number'?fmt(amount):amount}</bdi></strong>",'عزل مبالغ النتائج',false);
+
+/* ===== 2) Article 10 legal calendar engine ===== */
+const YEAR_ANCHOR="const years=(a,b)=>dayDiff(a,b)/365.2425;";
+patchExact(YEAR_ANCHOR,`const years=(a,b)=>ndrServiceYears(a,b);
+function ndrBasis(){try{return localStorage.getItem('ndr_legal_calendar_basis')||'hijri'}catch(e){return'hijri'}}
+function ndrBasisLabel(){return ndrBasis()==='gregorian'?'ميلادي حسب العقد/اللائحة':'هجري — الأصل النظامي (م10)'}
+function ndrUTC(d){return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()))}
+function ndrLocalFromUTC(d){return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())}
+function ndrGregorianAnniversary(a,n){const y=a.getFullYear()+n,m=a.getMonth(),last=new Date(y,m+1,0).getDate();return new Date(y,m,Math.min(a.getDate(),last))}
+function ndrHijriAnniversary(a,n){const h=toHijri(ndrUTC(a));if(!h)return null;for(let day=h.d;day>=1;day--){const u=fromHijri(h.y+n,h.m,day);if(u)return ndrLocalFromUTC(u)}return null}
+function ndrAddLegalYears(a,n){return ndrBasis()==='gregorian'?ndrGregorianAnniversary(a,n):ndrHijriAnniversary(a,n)}
+function ndrServiceYears(a,b){
+  if(!a||!b||b<=a)return 0;
+  let guess;
+  if(ndrBasis()==='gregorian')guess=Math.max(0,b.getFullYear()-a.getFullYear());
+  else{const ha=toHijri(ndrUTC(a)),hb=toHijri(ndrUTC(b));if(!ha||!hb)return 0;guess=Math.max(0,hb.y-ha.y)}
+  let ann=ndrAddLegalYears(a,guess);
+  while(guess>0&&(!ann||ann>b)){guess--;ann=ndrAddLegalYears(a,guess)}
+  let next=ndrAddLegalYears(a,guess+1);
+  while(next&&next<=b&&guess<200){guess++;ann=next;next=ndrAddLegalYears(a,guess+1)}
+  if(!ann||!next)return guess;
+  const den=daysBetween(ann,next)||1,rem=daysBetween(ann,b);
+  return guess+rem/den;
+}
+function ndrLegalDurationLabel(a,b,y){return (y===undefined?ndrServiceYears(a,b):y).toFixed(4)+' سنة · '+ndrBasisLabel()}
+function ndrAddMonthsClamped(d,n){n=Math.trunc(n);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return d}
+function ndrAddYearsClamped(d,n){n=Math.trunc(n);const day=d.getDate(),m=d.getMonth(),y=d.getFullYear()+n,last=new Date(y,m+1,0).getDate();d.setFullYear(y,m,Math.min(day,last));return d}`,'محرك المدد النظامية — المادة 10');
+
+/* visible legal-basis selector; defaults to Hijri per Art. 10 */
+patchExact('<body>',`<body><div id="ndr-legal-basis-bar"><b>أساس احتساب المدد النظامية:</b><select id="ndr-legal-basis" onchange="try{localStorage.setItem('ndr_legal_calendar_basis',this.value)}catch(e){};location.reload()"><option value="hijri">هجري — الأصل النظامي</option><option value="gregorian">ميلادي — إذا نص العقد/اللائحة</option></select><small>المادة 10 من نظام العمل</small></div><script>document.addEventListener('DOMContentLoaded',()=>{const e=document.getElementById('ndr-legal-basis');if(e)e.value=(()=>{try{return localStorage.getItem('ndr_legal_calendar_basis')||'hijri'}catch(x){return'hijri'}})();const g=document.getElementById('g-date');if(g&&g.type==='month'){const v=g.value;try{g.type='date';if(v&&/^\\d{4}-\\d{2}$/.test(v))g.value=v+'-01'}catch(x){}}if(g){const lab=g.closest('.field')?.querySelector('label');if(lab)lab.textContent='تاريخ الاحتساب الفعلي';}});<\/script>`,'محدد أساس التقويم');
+
+/* ===== 3) EOS: correct wage label + legal service basis + exact 5y threshold ===== */
+patchExact("field('salary','إجمالي الراتب قبل خصم نسبة التأمينات الاجتماعية','number','min=\"0\" step=\"0.01\"')","field('salary','الأجر الفعلي الأخير المعتمد لمكافأة نهاية الخدمة','number','min=\"0\" step=\"0.01\"')",'مسمى أجر نهاية الخدمة',false);
+patchExact("`${y.toFixed(2)} سنة خدمة`","`${ndrLegalDurationLabel(a,b,y)} خدمة`",'عرض مدة EOS',false);
+patchExact("['مدة الخدمة',y.toFixed(2)+' سنة']","['مدة الخدمة',ndrLegalDurationLabel(a,b,y)]",'تفصيل مدة EOS',false);
+/* original ratio is legally correct only when y itself uses the legal basis */
+
+/* Article 18: ownership transfer alone does NOT end the contract */
+patchExact("owner18  :{t:'إنتقال ملكية المنشأة (الفردية) إلى مالك جديد وفقاً للمادة 18', f:'full', n:FULL}","owner18  :{t:'إنهاء العامل لعدم موافقته كتابةً على انتقال حقوقه السابقة عند انتقال منشأة فردية وفق المادة 18', f:'full', n:'انتقال الملكية وحده لا ينهي العقد؛ الأصل استمرار العقد والخدمة. يظهر هذا السبب فقط للحالة الخاصة في المنشأة الفردية عند عدم موافقة العامل كتابةً على انتقال حقوقه السابقة.'}",'تصحيح سبب المادة 18');
+
+/* ===== 4) Annual leave: remove /365 leap-year bug and respect Art. 10 ===== */
+patchExact("const Y = daysBetween(s,e)/365;","const Y = ndrServiceYears(s,e);",'مدة الإجازة السنوية');
+patchExact("basis='حسب النظام — 21 يوم ثم 30 يوم';","basis='حسب النظام — 21 يوم ثم 30 يوم · '+ndrBasisLabel();",'إظهار أساس مدة الإجازة',false);
+
+/* ===== 5) Sick leave: 30/60/30 stays; one-year cycle uses legal calendar basis ===== */
+patchExact("const yEnd = new Date(f.getFullYear()+1, f.getMonth(), f.getDate());","const yEnd = ndrAddLegalYears(f,1);",'تجدد السنة المرضية');
+patchExact("const nEnd = new Date(st.getFullYear()+1, st.getMonth(), st.getDate());","const nEnd = ndrAddLegalYears(st,1);",'نهاية السنة المرضية الجديدة');
+
+/* ===== 6) GOSI: correct min base + exact effective dates ===== */
+patchExact("{label:'السنة الأولى — يوليو 2024', pension:9.00},","{label:'السنة الأولى — 3 يوليو 2024', pension:9.00},",'وسم GOSI 2024');
+patchExact("{label:'السنة الثانية — يوليو 2025', pension:9.50},","{label:'السنة الثانية — 1 يوليو 2025', pension:9.50},",'وسم GOSI 2025');
+patchExact("{label:'السنة الثالثة — يوليو 2026', pension:10.00},","{label:'السنة الثالثة — 1 يوليو 2026', pension:10.00},",'وسم GOSI 2026');
+patchExact("{label:'السنة الرابعة — يوليو 2027', pension:10.50},","{label:'السنة الرابعة — 1 يوليو 2027', pension:10.50},",'وسم GOSI 2027');
+patchExact("{label:'السنة الخامسة — يوليو 2028', pension:11.00}","{label:'السنة الخامسة — 14 يوليو 2028', pension:11.00}",'وسم GOSI 2028');
+patchExact(`function gosiTierIndex(d){
+  const julyYear = (d.getMonth() >= 6) ? d.getFullYear() : d.getFullYear()-1;
+  return Math.max(0, Math.min(GOSI_TIERS.length-1, julyYear - 2024));
+}`,`function gosiTierIndex(d){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  if(x>=new Date(2028,6,14))return 4;
+  if(x>=new Date(2027,6,1))return 3;
+  if(x>=new Date(2026,6,1))return 2;
+  if(x>=new Date(2025,6,1))return 1;
+  return 0;
+}`,'حدود تدرج GOSI');
+patchExact("const base = Math.min(Math.max(raw, GOSI_MIN), GOSI_MAX);\n  const capped = raw > GOSI_MAX, floored = raw < GOSI_MIN;","const minBase = cat==='nonsa'?400:GOSI_MIN;\n  const base = Math.min(Math.max(raw, minBase), GOSI_MAX);\n  const capped = raw > GOSI_MAX, floored = raw < minBase;",'وعاء GOSI حسب الفرع');
+patchExact("if(floored) rows.push({k:'تطبيق الحد الأدنى — 1,500',sub:true,v:money(base)});","if(floored) rows.push({k:'تطبيق الحد الأدنى — '+money(minBase),sub:true,v:money(base)});",'عرض حد GOSI الأدنى');
+patchExact("const d = mv ? new Date(mv+'-01T00:00:00') : new Date();","const d = mv ? new Date((mv.length===10?mv:mv+'-01')+'T00:00:00') : new Date();",'تاريخ GOSI باليوم');
+
+/* ===== 7) Hijri converter: reject impossible dates ===== */
+patchExact("  return best;\n}\nfunction fmtG(d)","  return null;\n}\nfunction fmtG(d)",'رفض التاريخ الهجري غير الموجود');
+
+/* ===== 8) Date arithmetic: clamp month/year end instead of JS overflow ===== */
+patchExact("else if(u==='m') d.setMonth(d.getMonth()+n);\n  else d.setFullYear(d.getFullYear()+n);","else if(u==='m') ndrAddMonthsClamped(d,n);\n  else ndrAddYearsClamped(d,n);",'إضافة شهر/سنة دون overflow');
+
+/* ===== 9) Trial-period educational text ===== */
+patchExact("لا تزيد فترة التجربة على 180 يوماً، ولا تُحتسب فيها إجازتا عيدي الفطر والأضحى ولا الإجازة المرضية.","لا تزيد فترة التجربة على 180 يوماً، ولا تُحتسب فيها إجازتا عيدي الفطر والأضحى، وإجازة اليوم الوطني، وإجازة يوم التأسيس، والإجازة المرضية.",'استثناءات فترة التجربة',false);
+
+/* ===== Patch audit marker ===== */
+const requiredApplied=PATCHES.filter(x=>x.count>0).length;
+html=html.replace('</body>',`<script>window.__NDR_AUDIT__=${JSON.stringify({release:'rc-2026-08-25',requiredApplied})};console.info('NDR audit patches',window.__NDR_AUDIT__);<\/script></body>`);
+
+document.open();document.write(html);document.close();
+}catch(e){console.error(e);document.body.innerHTML='<div class="box"><b>تم إيقاف تشغيل النسخة لسلامة النتائج.</b><br><small>'+String(e)+'</small><br><br><span>لم يتم عرض الحاسبات لأن إصلاحاً إلزامياً لم يطابق المصدر الحالي.</span></div>'}})();
+</script></body></html>
