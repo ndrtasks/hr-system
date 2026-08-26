@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/edgecase-core-v2.mjs && node scripts/edgecase-labor-extra.mjs && node scripts/edgecase-gosi-extra.mjs && node scripts/edgecase-advanced-v2.mjs && node scripts/edgecase-scope.mjs && node scripts/snapshot-ndr-hr-data.mjs && node scripts/edgecase-release-gate.mjs && vite build",
+    "build": "node scripts/edgecase-core-v2.mjs && node scripts/edgecase-labor-extra.mjs && node scripts/edgecase-gosi-extra.mjs && node scripts/edgecase-advanced-v2.mjs && node scripts/edgecase-scope.mjs && node scripts/snapshot-ndr-hr-data.mjs && node scripts/edgecase-release-gate.mjs && node scripts/parity-build-gate.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
