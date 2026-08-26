@@ -1,0 +1,1 @@
+export default function handler(req,res){const configured=!!(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY||process.env.GOOGLE_GENERATIVE_AI_API_KEY);res.setHeader('cache-control','no-store');res.status(200).json({ok:true,aiConfigured:configured,mode:configured?'ai+reference':'reference-fallback',model:configured?'gemini-2.5-flash':null})}
