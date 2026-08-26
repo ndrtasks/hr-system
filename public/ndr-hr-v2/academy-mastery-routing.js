@@ -1,1 +1,27 @@
-(()=>{'use strict';const hasDiagnostic=()=>{try{return !!JSON.parse(localStorage.getItem('ndrAcademyMasteryV1')||'{}').diagnostic}catch{return false}};window.addEventListener('click',e=>{const mastery=e.target.closest?.('[data-mastery]');if(mastery&&!hasDiagnostic()){e.preventDefault();e.stopImmediatePropagation();document.querySelector('#diagnosticBtn')?.click();return}const card=e.target.closest?.('.track');if(!card)return;if(e.target.closest('button,a,input,textarea,label'))return;const b=card.querySelector('[data-mastery]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(!hasDiagnostic())document.querySelector('#diagnosticBtn')?.click();else b.click()},true)})();
+(()=>{'use strict';
+const STORE='ndrAcademyMasteryV1';
+function state(){try{return JSON.parse(localStorage.getItem(STORE)||'{}')}catch{return{}}}
+function hasDiagnostic(){return !!state().diagnostic}
+function score(track){return state().skills?.[track]?.score||0}
+function openRecommended(track){
+  if(!hasDiagnostic()){document.querySelector('#diagnosticBtn')?.click();return}
+  if(score(track)<70&&window.NDRUnits?.openTrack){window.NDRUnits.openTrack(track);return}
+  const b=document.querySelector('.track[data-track="'+track+'"] [data-mastery]');
+  if(b){b.dataset.adaptiveAllow='1';b.click();delete b.dataset.adaptiveAllow}
+}
+window.addEventListener('click',e=>{
+  const mastery=e.target.closest?.('[data-mastery]');
+  if(mastery&&!mastery.dataset.adaptiveAllow){
+    e.preventDefault();e.stopImmediatePropagation();
+    const t=mastery.dataset.mastery;
+    if(!hasDiagnostic()){document.querySelector('#diagnosticBtn')?.click();return}
+    if(score(t)<70&&window.NDRUnits?.openTrack){window.NDRUnits.openTrack(t);return}
+    mastery.dataset.adaptiveAllow='1';mastery.click();delete mastery.dataset.adaptiveAllow;return
+  }
+  const card=e.target.closest?.('.track');
+  if(!card||e.target.closest('button,a,input,textarea,label'))return;
+  const t=card.dataset.track;if(!t)return;
+  e.preventDefault();e.stopImmediatePropagation();openRecommended(t)
+},true);
+window.NDRAdaptive={openRecommended,score};
+})();
