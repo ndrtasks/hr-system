@@ -1,0 +1,31 @@
+name: MOJ labor snapshot
+on:
+  push:
+    branches: [feature/ndr-hr-academy-v3]
+    paths:
+      - 'scripts/moj-labor-snapshot.py'
+      - '.github/workflows/moj-labor-snapshot.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ndr-hr-academy-v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - run: python scripts/moj-labor-snapshot.py
+      - name: Commit snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tmp/moj-labor-raw.json
+          if git diff --cached --quiet; then echo 'No snapshot change'; exit 0; fi
+          git commit -m 'Snapshot latest MOJ labor judgments'
+          git push origin HEAD:feature/ndr-hr-academy-v3
