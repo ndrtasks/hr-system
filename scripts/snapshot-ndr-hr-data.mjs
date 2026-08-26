@@ -32,7 +32,7 @@ for(const s of specs){
 
 /* Nitaqat activity constants are embedded in the reference implementation.
    Runtime does not call the reference: this is a build-time snapshot, validated
-   against the 32-activity structure of the 2026 Nitaqat guide. */
+   against the official 41-activity annex in the 2026 Nitaqat Developer guide. */
 const rr=await fetch(REF,{headers:{accept:'text/html'}});
 if(!rr.ok) throw new Error(`NITAQAT source: HTTP ${rr.status}`);
 const html=await rr.text();
@@ -50,7 +50,7 @@ for(let i=arrStart;i<html.length;i++){
 }
 if(arrStart<0||arrEnd<0) throw new Error('NITAQAT: array boundary not found');
 const nitaqat=JSON.parse(html.slice(arrStart,arrEnd));
-if(!Array.isArray(nitaqat)||nitaqat.length!==32) throw new Error(`NITAQAT: expected 32 activities, got ${nitaqat?.length}`);
+if(!Array.isArray(nitaqat)||nitaqat.length!==41) throw new Error(`NITAQAT: expected 41 activities, got ${nitaqat?.length}`);
 for(const a of nitaqat){
   if(!a||typeof a.n!=='string'||!Array.isArray(a.b)||a.b.length!==4) throw new Error('NITAQAT: invalid activity shape');
   for(const row of a.b) if(!Array.isArray(row)||row.length!==4||row.some(x=>!Number.isFinite(x))) throw new Error(`NITAQAT: invalid row in ${a.n}`);
