@@ -2,10 +2,10 @@ import {readFile,writeFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const base='public/ndr-hr-v2/';
 const files=['academy-unit-data-1.js','academy-unit-data-2.js','academy-unit-data-3.js','academy-unit-data-4.js'];
-const [srcs,routing,quiz,plan,html]=await Promise.all([Promise.all(files.map(f=>readFile(base+f,'utf8'))),readFile(base+'academy-mastery-routing.js','utf8'),readFile(base+'academy-unit-quiz.js','utf8'),readFile(base+'academy-plan.js','utf8'),readFile(base+'academy.html','utf8')]);
+const [srcs,routing,quiz,plan,projects,html]=await Promise.all([Promise.all(files.map(f=>readFile(base+f,'utf8'))),readFile(base+'academy-mastery-routing.js','utf8'),readFile(base+'academy-unit-quiz.js','utf8'),readFile(base+'academy-plan.js','utf8'),readFile(base+'academy-projects.js','utf8'),readFile(base+'academy.html','utf8')]);
 const sandbox={window:{NDR_UNIT_CASES:{}}};vm.createContext(sandbox);
 let syntax=true,error='';
-try{for(const s of srcs)new vm.Script(s).runInContext(sandbox);new Function(routing);new Function(quiz);new Function(plan)}catch(e){syntax=false;error=e.message}
+try{for(const s of srcs)new vm.Script(s).runInContext(sandbox);new Function(routing);new Function(quiz);new Function(plan);new Function(projects)}catch(e){syntax=false;error=e.message}
 const U=sandbox.window.NDR_UNIT_CASES||{},entries=Object.entries(U);
 const tracks=['workforce','recruit','onboard','attendance','relations','payroll','performance','offboard','rewards','talent','gov','policy','experience','analytics'];
 const blockers=[],warnings=[];
@@ -41,10 +41,15 @@ const checks={
  quizCaseSpecific:quiz.includes("x.track===u.track")&&quiz.includes("u[field][0]")&&quiz.includes("first(u.model)"),
  planLinked:html.includes('academy-plan.js')&&html.includes('academy-plan.css'),
  personalWeaknessPlan:plan.includes('sort((a,b)=>a.score-b.score)')&&plan.includes('slice(0,4)')&&plan.includes('أضعف مجال'),
- spacedReviewPriority:plan.includes('dueUnits()')&&plan.includes("type:'review'")&&plan.includes('مراجعة تثبيت')
+ spacedReviewPriority:plan.includes('dueUnits()')&&plan.includes("type:'review'")&&plan.includes('مراجعة تثبيت'),
+ projectsLinked:html.includes('academy-projects.js')&&html.includes('academy-projects.css'),
+ projectsFour:(projects.match(/id:'p[1-4]'/g)||[]).length===4,
+ projectRubric:(projects.match(/fields:\[/g)||[]).length>=4&&projects.includes('total>=80&&parts.every(x=>x>=12)'),
+ progressiveProjects:projects.includes('us.passed>=8')&&projects.includes('us.passed>=20')&&projects.includes('us.passed>=36')&&projects.includes('us.passed>=48')&&projects.includes('cs>=4')&&projects.includes('ts.over70>=12'),
+ professionalProject:projects.includes('التحدي النهائي للمحترف')&&projects.includes('خطة HR متكاملة')&&projects.includes('خطة 12 شهر')
 };
 const failed=Object.entries(checks).filter(([,v])=>!v).map(([k])=>k);
 const report={ok:!failed.length,strictDepthReady:warnings.length===0,generatedAt:new Date().toISOString(),checks,failed,error,count:entries.length,perTrack,blockers,warnings};
 await writeFile(base+'units-audit.json',JSON.stringify(report,null,2),'utf8');
-console.log(`NDR HR 56-unit strict gate: ${entries.length}/56; tracks=${Object.values(perTrack).filter(x=>x===4).length}/14; blockers=${blockers.length}; depth warnings=${warnings.length}; quiz=${checks.quizThree}; plan=${checks.personalWeaknessPlan}`);
-if(failed.length)throw new Error('56-unit strict gate failed: '+failed.join(', ')+' blockers='+JSON.stringify(blockers.slice(0,5))+' warnings='+JSON.stringify(warnings.slice(0,8))+' '+error);
+console.log(`NDR HR competency gate: units=${entries.length}/56; tracks=${Object.values(perTrack).filter(x=>x===4).length}/14; blockers=${blockers.length}; depth=${warnings.length}; quiz=${checks.quizThree}; plan=${checks.personalWeaknessPlan}; projects=${checks.projectsFour}`);
+if(failed.length)throw new Error('NDR HR competency gate failed: '+failed.join(', ')+' blockers='+JSON.stringify(blockers.slice(0,5))+' warnings='+JSON.stringify(warnings.slice(0,8))+' '+error);
