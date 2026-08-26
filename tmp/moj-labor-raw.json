@@ -1,0 +1,264 @@
+{
+  "generatedAt": "2026-08-26T19:42:44Z",
+  "source": "Saudi Ministry of Justice laws portal",
+  "courtType": 2,
+  "target": 65,
+  "count": 11,
+  "pageStats": [
+    {
+      "page": 1,
+      "returned": 12
+    },
+    {
+      "page": 2,
+      "returned": 12
+    },
+    {
+      "page": 3,
+      "returned": 12
+    },
+    {
+      "page": 4,
+      "returned": 12
+    },
+    {
+      "page": 5,
+      "returned": 12
+    },
+    {
+      "page": 6,
+      "returned": 12
+    },
+    {
+      "page": 7,
+      "returned": 12
+    },
+    {
+      "page": 8,
+      "returned": 12
+    },
+    {
+      "page": 9,
+      "returned": 12
+    },
+    {
+      "page": 10,
+      "returned": 12
+    },
+    {
+      "page": 11,
+      "returned": 12
+    },
+    {
+      "page": 12,
+      "returned": 12
+    },
+    {
+      "page": 13,
+      "returned": 12
+    },
+    {
+      "page": 14,
+      "returned": 12
+    },
+    {
+      "page": 15,
+      "returned": 12
+    },
+    {
+      "page": 16,
+      "returned": 12
+    },
+    {
+      "page": 17,
+      "returned": 12
+    },
+    {
+      "page": 18,
+      "returned": 12
+    },
+    {
+      "page": 19,
+      "returned": 12
+    },
+    {
+      "page": 20,
+      "returned": 12
+    },
+    {
+      "page": 21,
+      "returned": 12
+    },
+    {
+      "page": 22,
+      "returned": 12
+    },
+    {
+      "page": 23,
+      "returned": 12
+    },
+    {
+      "page": 24,
+      "returned": 12
+    },
+    {
+      "page": 25,
+      "returned": 12
+    },
+    {
+      "page": 26,
+      "returned": 12
+    },
+    {
+      "page": 27,
+      "returned": 12
+    },
+    {
+      "page": 28,
+      "returned": 12
+    },
+    {
+      "page": 29,
+      "returned": 12
+    },
+    {
+      "page": 30,
+      "returned": 12
+    }
+  ],
+  "errors": [],
+  "judgments": [
+    {
+      "id": "N51nbchdgnwovLal_KruKWXU_O_lFC0CBi4M3NtmWpy-NEa1Wvkf9vGXEUPCy5Kd",
+      "judgmentNumber": "4631060730",
+      "caseNumber": "4630907828",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-12-09",
+      "hijriYear": 1446,
+      "city": "منطقة مكة المكرمة",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/N51nbchdgnwovLal_KruKWXU_O_lFC0CBi4M3NtmWpy-NEa1Wvkf9vGXEUPCy5Kd"
+    },
+    {
+      "id": "R6sJGfut0NIiHh7OUhERwOwgVKktFwYK2X0q-LoUh4mk2dpwUKsm5XQ73hQiMwbK",
+      "judgmentNumber": "4631066400",
+      "caseNumber": "4630921133",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-12-02",
+      "hijriYear": 1446,
+      "city": "منطقة مكة المكرمة",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/R6sJGfut0NIiHh7OUhERwOwgVKktFwYK2X0q-LoUh4mk2dpwUKsm5XQ73hQiMwbK"
+    },
+    {
+      "id": "gxYYISnSIOM66kykNqRv7hX_UULgRoYCbIn7kjvW55GzcFSbR1yTw7mLyjozKhXb",
+      "judgmentNumber": "4630924013",
+      "caseNumber": "4630775946",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-10-22",
+      "hijriYear": 1446,
+      "city": "المنطقة الشرقية",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/gxYYISnSIOM66kykNqRv7hX_UULgRoYCbIn7kjvW55GzcFSbR1yTw7mLyjozKhXb"
+    },
+    {
+      "id": "tiICwNupPUlYpdYkDmKcJocMD7-5TThUId2X7B5VZmjnzvewwss-ZAPfbLhU5h_s",
+      "judgmentNumber": "4630916924",
+      "caseNumber": "4630783708",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-10-18",
+      "hijriYear": 1446,
+      "city": "المنطقة الشرقية",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/tiICwNupPUlYpdYkDmKcJocMD7-5TThUId2X7B5VZmjnzvewwss-ZAPfbLhU5h_s"
+    },
+    {
+      "id": "DKf5ytmxZrvYhoM1ZK7wwgivHyuVfTmDJxc1lMywXjpyvcDetl9wihLLxDAYSDS-",
+      "judgmentNumber": "4630871312",
+      "caseNumber": "4630728197",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-09-23",
+      "hijriYear": 1446,
+      "city": "المنطقة الشرقية",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/DKf5ytmxZrvYhoM1ZK7wwgivHyuVfTmDJxc1lMywXjpyvcDetl9wihLLxDAYSDS-"
+    },
+    {
+      "id": "pPUhdzn9qstllDenhLGVoT0BrAQqJlN92JTMAKLpcIkc_3917_9WVS90DcrknxgA",
+      "judgmentNumber": "4630748623",
+      "caseNumber": "4630591610",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-08-12",
+      "hijriYear": 1446,
+      "city": "المنطقة الشرقية",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/pPUhdzn9qstllDenhLGVoT0BrAQqJlN92JTMAKLpcIkc_3917_9WVS90DcrknxgA"
+    },
+    {
+      "id": "dN2g_g4U9DZkxOha0nogvc-4pPJE5WObPnEYcvwqm44CtfRIDKeRgN3q7Mz6rCgC",
+      "judgmentNumber": "4630742301",
+      "caseNumber": "4630595026",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-08-11",
+      "hijriYear": 1446,
+      "city": "بريدة",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/dN2g_g4U9DZkxOha0nogvc-4pPJE5WObPnEYcvwqm44CtfRIDKeRgN3q7Mz6rCgC"
+    },
+    {
+      "id": "HNse6QgtQm8D3_gB4TdgvsKG0nHFvyqNNPl3sBp-Cu6k1hiNChpgGK7ZmRHbJhnk",
+      "judgmentNumber": "4630619894",
+      "caseNumber": "4630366954",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-07-07",
+      "hijriYear": 1446,
+      "city": "الرياض",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/HNse6QgtQm8D3_gB4TdgvsKG0nHFvyqNNPl3sBp-Cu6k1hiNChpgGK7ZmRHbJhnk"
+    },
+    {
+      "id": "laOC7bAUpzqyL7FhbYV7koJkdcVsT8gx0FF0V4uqaSOQa5exBKmH10gb4F8C7Msq",
+      "judgmentNumber": "4630607783",
+      "caseNumber": "4630475516",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-07-01",
+      "hijriYear": 1446,
+      "city": "الرياض",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/laOC7bAUpzqyL7FhbYV7koJkdcVsT8gx0FF0V4uqaSOQa5exBKmH10gb4F8C7Msq"
+    },
+    {
+      "id": "uk_yyuNFrw0SaGeCsxLFTrlnl9TRccl4IqkhBqp_wQezVMUTrIaX67l0u-AXq6ql",
+      "judgmentNumber": "4630371391",
+      "caseNumber": "4630228183",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-04-25",
+      "hijriYear": 1446,
+      "city": "المنطقة الشرقية",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/uk_yyuNFrw0SaGeCsxLFTrlnl9TRccl4IqkhBqp_wQezVMUTrIaX67l0u-AXq6ql"
+    },
+    {
+      "id": "Pnag6fnQZiLhaPmrNbgfZpzL9FpnJap69ap-ftnys40baG9diSJ-Ksku25HNVmBF",
+      "judgmentNumber": "4630363186",
+      "caseNumber": "4630201654",
+      "courtName": "المحكمة العمالية",
+      "courtType": 2,
+      "judgmentDate": "1446-04-18",
+      "hijriYear": 1446,
+      "city": "منطقة مكة المكرمة",
+      "isAppeal": true,
+      "url": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/Pnag6fnQZiLhaPmrNbgfZpzL9FpnJap69ap-ftnys40baG9diSJ-Ksku25HNVmBF"
+    }
+  ]
+}
