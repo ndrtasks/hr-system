@@ -2,6 +2,7 @@ import json, os, re, time, hashlib
 from pathlib import Path
 import requests
 
+# Snapshot latest Ministry of Justice labor judgment metadata for Academy curation.
 LIST='https://laws-gateway.moj.gov.sa/apis/legislations/v1/Judgements/judgements-list'
 OUT=Path('tmp/moj-labor-raw.json')
 HEAD={'Content-Type':'application/json;charset=UTF-8','User-Agent':'Mozilla/5.0'}
