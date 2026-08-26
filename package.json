@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/edgecase-core-v2.mjs && node scripts/edgecase-labor-extra.mjs && node scripts/edgecase-gosi-extra.mjs && node scripts/edgecase-advanced-v2.mjs && node scripts/edgecase-scope.mjs && node scripts/snapshot-ndr-hr-data.mjs && node scripts/v3-reference-fix.mjs && node scripts/v3-academy-patch.mjs && node scripts/v3-track-expansion.mjs && node scripts/v3-academy-ui-patch.mjs && node scripts/v3-detailed-learning-shell.mjs && node scripts/v3-simple-language.mjs && node scripts/v3-contrast-shell.mjs && node scripts/v3-ai-free-model.mjs && node scripts/edgecase-release-gate.mjs && node scripts/final-audit-build-gate.mjs && node scripts/parity-build-gate.mjs && node scripts/academy-v3-gate.mjs && node scripts/v3-detailed-learning-gate.mjs && vite build",
+    "build": "node scripts/edgecase-core-v2.mjs && node scripts/edgecase-labor-extra.mjs && node scripts/edgecase-gosi-extra.mjs && node scripts/edgecase-advanced-v2.mjs && node scripts/edgecase-scope.mjs && node scripts/snapshot-ndr-hr-data.mjs && node scripts/v3-reference-fix.mjs && node scripts/v3-academy-patch.mjs && node scripts/v3-track-expansion.mjs && node scripts/v3-academy-ui-patch.mjs && node scripts/v3-detailed-learning-shell.mjs && node scripts/v3-simple-language.mjs && node scripts/v3-contrast-shell.mjs && node scripts/v3-ai-free-model.mjs && node scripts/v3-dedicated-ai-key.mjs && node scripts/edgecase-release-gate.mjs && node scripts/final-audit-build-gate.mjs && node scripts/parity-build-gate.mjs && node scripts/academy-v3-gate.mjs && node scripts/v3-detailed-learning-gate.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
