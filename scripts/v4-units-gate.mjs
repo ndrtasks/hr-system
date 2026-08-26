@@ -38,7 +38,7 @@ const checks={
  quizLinked:html.includes('academy-unit-quiz.js')&&html.includes('academy-unit-quiz.css'),
  quizThree:quiz.includes("correct>=2")&&quiz.includes("جاوب على الأسئلة الثلاثة")&&quiz.includes('quizPassed'),
  quizBlocksCompletion:quiz.includes('item.score=79')&&quiz.includes('item.passed=false')&&quiz.includes('practiceScore'),
- quizCaseSpecific:quiz.includes("same track")===false&&quiz.includes("x.track===u.track")&&quiz.includes("u.gaps[0]")&&quiz.includes("u.legal[0]"),
+ quizCaseSpecific:quiz.includes("x.track===u.track")&&quiz.includes("u[field][0]")&&quiz.includes("first(u.model)"),
  planLinked:html.includes('academy-plan.js')&&html.includes('academy-plan.css'),
  personalWeaknessPlan:plan.includes('sort((a,b)=>a.score-b.score)')&&plan.includes('slice(0,4)')&&plan.includes('أضعف مجال'),
  spacedReviewPriority:plan.includes('dueUnits()')&&plan.includes("type:'review'")&&plan.includes('مراجعة تثبيت')
