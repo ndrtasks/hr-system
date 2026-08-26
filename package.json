@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/snapshot-ndr-hr-data.mjs && vite build",
+    "build": "node scripts/edgecase-hardening.mjs && node scripts/snapshot-ndr-hr-data.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
