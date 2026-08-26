@@ -1,0 +1,34 @@
+[
+  {
+    "route": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/0",
+    "url": "https://laws-gateway.moj.gov.sa/apis/legislations/v1/Judgements/judgements-list",
+    "method": "OPTIONS",
+    "postData": null,
+    "headers": {}
+  },
+  {
+    "route": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/0",
+    "url": "https://laws-gateway.moj.gov.sa/apis/legislations/v1/Judgements/judgements-list",
+    "method": "POST",
+    "postData": "{\"pageNumber\":1,\"pageSize\":12,\"judgmentNo\":null,\"decisionNo\":null,\"cityId\":null,\"viewType\":\"grid\",\"courtTypes\":0,\"courtId\":null,\"term\":null,\"dateFrom\":\"\",\"dateTo\":\"\",\"sortingBy\":2,\"identityNumber\":\"\"}",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  },
+  {
+    "route": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2",
+    "url": "https://laws-gateway.moj.gov.sa/apis/legislations/v1/Judgements/judgements-list",
+    "method": "POST",
+    "postData": "{\"pageNumber\":1,\"pageSize\":12,\"judgmentNo\":null,\"decisionNo\":null,\"cityId\":null,\"viewType\":\"grid\",\"courtTypes\":2,\"courtId\":null,\"term\":null,\"dateFrom\":\"\",\"dateTo\":\"\",\"sortingBy\":2,\"identityNumber\":\"\"}",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  },
+  {
+    "route": "https://laws.moj.gov.sa/ar/JudicialDecisionsList/2",
+    "url": "https://laws-gateway.moj.gov.sa/apis/legislations/v1/Judgements/judgements-list",
+    "method": "OPTIONS",
+    "postData": null,
+    "headers": {}
+  }
+]
