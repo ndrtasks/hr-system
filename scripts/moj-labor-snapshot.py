@@ -33,13 +33,12 @@ def main():
             jid=str(j.get('id') or '')
             if not jid or jid in seen: continue
             seen.add(jid);rows.append(clean(j))
-            if len(rows)>=TARGET: break
         page_stats.append({'page':page,'returned':len(batch),'labor':labor,'uniqueTotal':len(rows)})
         if len(rows)>=TARGET or not batch: break
         time.sleep(.08)
-    data={'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'source':'Saudi Ministry of Justice laws portal','filter':COURT_FILTER,'target':TARGET,'count':len(rows),'pageSize':PAGE_SIZE,'pageStats':page_stats,'errors':errors,'judgments':rows[:TARGET]}
+    rows.sort(key=lambda x:(x.get('judgmentDate') or '',x.get('judgmentNumber') or ''),reverse=True)
+    data={'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'source':'Saudi Ministry of Justice laws portal','filter':COURT_FILTER,'target':TARGET,'count':len(rows),'targetReached':len(rows)>=TARGET,'pageSize':PAGE_SIZE,'pageStats':page_stats,'errors':errors,'judgments':rows[:TARGET]}
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
-    if len(rows)<TARGET: raise RuntimeError(f'Only {len(rows)} unique labor judgments found after {len(page_stats)} pages')
-    print('MOJ labor snapshot: unique=',len(rows[:TARGET]),'pages=',len(page_stats),'errors=',len(errors))
+    print('MOJ labor discovery: unique=',len(rows),'targetReached=',len(rows)>=TARGET,'pages=',len(page_stats),'errors=',len(errors))
 
 if __name__=='__main__': main()
