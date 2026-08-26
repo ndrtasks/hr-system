@@ -1,157 +1,9 @@
 {
   "probes": {
-    "labor-size-12": {
-      "count": 12,
-      "rows": [
-        {
-          "id": "zT4uTsu7cHQJE8iIFp2Z0VI7IE1fR-VcDlCe87KzMt_26vkUBfors9V5W-972Lpe",
-          "judgementNumber": "4830116479",
-          "judgementDate": "1448-02-11",
-          "city": "الرياض",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "jhC_yGSKHoHike-o0_hVVffEDcdGHvkFxq5YJAv4EXZhgEleoauuzfezGSP-SiB5",
-          "judgementNumber": "4830062383",
-          "judgementDate": "1448-01-24",
-          "city": "جدة",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "xVPZvjwl2icQtt23-23CjNQbaUikomx4B35EnbOVXYMKIqcwT8DBA6F89A-hBgws",
-          "judgementNumber": "4830023389",
-          "judgementDate": "1448-01-24",
-          "city": "الدمام",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "VTmmFIn5svrwAhdDHcburdf8QFbPmiXKVWaHpz4wSRaXMZa4aS9T4w-9AWZGxCJk",
-          "judgementNumber": "4830029962",
-          "judgementDate": "1448-01-18",
-          "city": "جدة",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "N51nbchdgnwovLal_KruKWXU_O_lFC0CBi4M3NtmWpy-NEa1Wvkf9vGXEUPCy5Kd",
-          "judgementNumber": "4631060730",
-          "judgementDate": "1446-12-09",
-          "city": "منطقة مكة المكرمة",
-          "hijriYear": 1446,
-          "courtName": "المحكمة العمالية",
-          "courtType": 2,
-          "caseNumber": "4630907828",
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        }
-      ]
-    },
-    "labor-size-50": {
-      "count": 50,
-      "rows": [
-        {
-          "id": "zT4uTsu7cHQJE8iIFp2Z0VI7IE1fR-VcDlCe87KzMt_26vkUBfors9V5W-972Lpe",
-          "judgementNumber": "4830116479",
-          "judgementDate": "1448-02-11",
-          "city": "الرياض",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "jhC_yGSKHoHike-o0_hVVffEDcdGHvkFxq5YJAv4EXZhgEleoauuzfezGSP-SiB5",
-          "judgementNumber": "4830062383",
-          "judgementDate": "1448-01-24",
-          "city": "جدة",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "xVPZvjwl2icQtt23-23CjNQbaUikomx4B35EnbOVXYMKIqcwT8DBA6F89A-hBgws",
-          "judgementNumber": "4830023389",
-          "judgementDate": "1448-01-24",
-          "city": "الدمام",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "VTmmFIn5svrwAhdDHcburdf8QFbPmiXKVWaHpz4wSRaXMZa4aS9T4w-9AWZGxCJk",
-          "judgementNumber": "4830029962",
-          "judgementDate": "1448-01-18",
-          "city": "جدة",
-          "hijriYear": 1448,
-          "courtName": "المحكمة التجارية",
-          "courtType": 2,
-          "caseNumber": null,
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        },
-        {
-          "id": "N51nbchdgnwovLal_KruKWXU_O_lFC0CBi4M3NtmWpy-NEa1Wvkf9vGXEUPCy5Kd",
-          "judgementNumber": "4631060730",
-          "judgementDate": "1446-12-09",
-          "city": "منطقة مكة المكرمة",
-          "hijriYear": 1446,
-          "courtName": "المحكمة العمالية",
-          "courtType": 2,
-          "caseNumber": "4630907828",
-          "isAppeal": true,
-          "refereeNo": null,
-          "mostView": false,
-          "isFavorite": false
-        }
-      ]
-    },
-    "labor-size-100": {
+    "size-100": {
       "count": 100,
+      "labor": 11,
+      "seconds": 1.78,
       "rows": [
         {
           "id": "zT4uTsu7cHQJE8iIFp2Z0VI7IE1fR-VcDlCe87KzMt_26vkUBfors9V5W-972Lpe",
@@ -194,11 +46,32 @@
           "refereeNo": null,
           "mostView": false,
           "isFavorite": false
+        }
+      ]
+    },
+    "size-500": {
+      "count": 500,
+      "labor": 12,
+      "seconds": 3.7,
+      "rows": [
+        {
+          "id": "zT4uTsu7cHQJE8iIFp2Z0VI7IE1fR-VcDlCe87KzMt_26vkUBfors9V5W-972Lpe",
+          "judgementNumber": "4830116479",
+          "judgementDate": "1448-02-11",
+          "city": "الرياض",
+          "hijriYear": 1448,
+          "courtName": "المحكمة التجارية",
+          "courtType": 2,
+          "caseNumber": null,
+          "isAppeal": true,
+          "refereeNo": null,
+          "mostView": false,
+          "isFavorite": false
         },
         {
-          "id": "VTmmFIn5svrwAhdDHcburdf8QFbPmiXKVWaHpz4wSRaXMZa4aS9T4w-9AWZGxCJk",
-          "judgementNumber": "4830029962",
-          "judgementDate": "1448-01-18",
+          "id": "jhC_yGSKHoHike-o0_hVVffEDcdGHvkFxq5YJAv4EXZhgEleoauuzfezGSP-SiB5",
+          "judgementNumber": "4830062383",
+          "judgementDate": "1448-01-24",
           "city": "جدة",
           "hijriYear": 1448,
           "courtName": "المحكمة التجارية",
@@ -210,14 +83,63 @@
           "isFavorite": false
         },
         {
-          "id": "N51nbchdgnwovLal_KruKWXU_O_lFC0CBi4M3NtmWpy-NEa1Wvkf9vGXEUPCy5Kd",
-          "judgementNumber": "4631060730",
-          "judgementDate": "1446-12-09",
-          "city": "منطقة مكة المكرمة",
-          "hijriYear": 1446,
-          "courtName": "المحكمة العمالية",
+          "id": "xVPZvjwl2icQtt23-23CjNQbaUikomx4B35EnbOVXYMKIqcwT8DBA6F89A-hBgws",
+          "judgementNumber": "4830023389",
+          "judgementDate": "1448-01-24",
+          "city": "الدمام",
+          "hijriYear": 1448,
+          "courtName": "المحكمة التجارية",
           "courtType": 2,
-          "caseNumber": "4630907828",
+          "caseNumber": null,
+          "isAppeal": true,
+          "refereeNo": null,
+          "mostView": false,
+          "isFavorite": false
+        }
+      ]
+    },
+    "size-1000": {
+      "count": 1000,
+      "labor": 12,
+      "seconds": 3.27,
+      "rows": [
+        {
+          "id": "zT4uTsu7cHQJE8iIFp2Z0VI7IE1fR-VcDlCe87KzMt_26vkUBfors9V5W-972Lpe",
+          "judgementNumber": "4830116479",
+          "judgementDate": "1448-02-11",
+          "city": "الرياض",
+          "hijriYear": 1448,
+          "courtName": "المحكمة التجارية",
+          "courtType": 2,
+          "caseNumber": null,
+          "isAppeal": true,
+          "refereeNo": null,
+          "mostView": false,
+          "isFavorite": false
+        },
+        {
+          "id": "jhC_yGSKHoHike-o0_hVVffEDcdGHvkFxq5YJAv4EXZhgEleoauuzfezGSP-SiB5",
+          "judgementNumber": "4830062383",
+          "judgementDate": "1448-01-24",
+          "city": "جدة",
+          "hijriYear": 1448,
+          "courtName": "المحكمة التجارية",
+          "courtType": 2,
+          "caseNumber": null,
+          "isAppeal": true,
+          "refereeNo": null,
+          "mostView": false,
+          "isFavorite": false
+        },
+        {
+          "id": "xVPZvjwl2icQtt23-23CjNQbaUikomx4B35EnbOVXYMKIqcwT8DBA6F89A-hBgws",
+          "judgementNumber": "4830023389",
+          "judgementDate": "1448-01-24",
+          "city": "الدمام",
+          "hijriYear": 1448,
+          "courtName": "المحكمة التجارية",
+          "courtType": 2,
+          "caseNumber": null,
           "isAppeal": true,
           "refereeNo": null,
           "mostView": false,
