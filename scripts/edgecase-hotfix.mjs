@@ -1,0 +1,11 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const P='public/ndr-hr-v2/advanced.js';
+let s=await readFile(P,'utf8');
+const old="if(rep>0&&prev>180){rep=0;reset=true}";
+const neu="if(rep>0&&prev>=180){rep=0;reset=true}";
+if((s.split(old).length-1)!==1) throw new Error('discipline 180-day hotfix did not match exactly once');
+s=s.replace(old,neu);
+new Function(s);
+if(!s.includes('prev>=180')) throw new Error('discipline 180-day hotfix missing');
+await writeFile(P,s,'utf8');
+console.log('NDR HR exact 180-day disciplinary boundary fixed');
