@@ -1,0 +1,30 @@
+name: MOJ labor detail snapshot
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/ndr-hr-academy-v3]
+    paths:
+      - 'scripts/moj-labor-detail-snapshot.py'
+permissions:
+  contents: write
+jobs:
+  details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ndr-hr-academy-v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install selenium
+      - run: python scripts/moj-labor-detail-snapshot.py
+      - name: Commit compact raw detail snapshots
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tmp/moj-labor-details
+          git commit -m 'Snapshot compact MOJ labor judgment details' || exit 0
+          git pull --rebase origin feature/ndr-hr-academy-v3
+          git push origin HEAD:feature/ndr-hr-academy-v3
