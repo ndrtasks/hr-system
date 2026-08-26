@@ -1,0 +1,30 @@
+name: MOJ network probe
+on:
+  push:
+    branches: [feature/ndr-hr-academy-v3]
+    paths:
+      - 'scripts/moj-network-probe.py'
+      - '.github/workflows/moj-network-probe.yml'
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ndr-hr-academy-v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install selenium
+      - run: python scripts/moj-network-probe.py
+      - name: Commit probe
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tmp/moj-network.json
+          git commit -m 'Capture MOJ judgment list request' || exit 0
+          git pull --rebase origin feature/ndr-hr-academy-v3
+          git push origin HEAD:feature/ndr-hr-academy-v3
