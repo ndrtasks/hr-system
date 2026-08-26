@@ -3,16 +3,19 @@ const REF='https://ndr-ref-audit.vercel.app/api/data?name=';
 function eq(a,b,t=1e-9){return Math.abs(a-b)<=t}
 export default async function handler(req,res){
  try{
-  const paths=['public/ndr-hr-v2/app.js','public/ndr-hr-v2/advanced.js','public/ndr-hr-v2/index.html','public/ndr-hr-v2/advanced.html','scripts/snapshot-ndr-hr-data.mjs','package.json'];
+  const paths=['public/ndr-hr-v2/app.js','public/ndr-hr-v2/advanced.js','public/ndr-hr-v2/knowledge.js','public/ndr-hr-v2/index.html','public/ndr-hr-v2/advanced.html','public/ndr-hr-v2/knowledge.html','scripts/snapshot-ndr-hr-data.mjs','package.json'];
   const rr=await Promise.all(paths.map(p=>fetch(RAW+p,{cache:'no-store'})));
   if(rr.some(r=>!r.ok))throw new Error('تعذر جلب أحد ملفات المصدر');
-  const [core,adv,index,advanced,snap,pkg]=await Promise.all(rr.map(r=>r.text()));
-  let coreSyntax=true,advSyntax=true,coreError='',advError='';
+  const [core,adv,know,index,advanced,knowledge,snap,pkg]=await Promise.all(rr.map(r=>r.text()));
+  let coreSyntax=true,advSyntax=true,knowSyntax=true,coreError='',advError='',knowError='';
   try{new Function(core)}catch(e){coreSyntax=false;coreError=e.message}
   try{new Function(adv)}catch(e){advSyntax=false;advError=e.message}
+  try{new Function(know)}catch(e){knowSyntax=false;knowError=e.message}
+  const referenceCount=(know.match(/\{t:'/g)||[]).length;
+  const quizCount=(know.match(/\{g:'/g)||[]).length;
   const sourceChecks={
-   coreSyntax,advSyntax,
-   advancedLinked:index.includes('./advanced.html'),
+   coreSyntax,advSyntax,knowSyntax,
+   advancedLinked:index.includes('./advanced.html'),knowledgeLinked:index.includes('./knowledge.html'),
    xlsxLocal:advanced.includes('./vendor/xlsx.full.min.js')&&pkg.includes('"xlsx"'),
    nitaqatSmallEntity:adv.includes('if(total<=5)'),
    nitaqatNaturalLog:adv.includes('Math.log(total)'),
@@ -22,6 +25,8 @@ export default async function handler(req,res){
    finesCategories:adv.includes('workers<=20?0:workers<=49?1:2'),
    disciplineDailyWage:adv.includes('const daily=wage/30'),
    excelLocalAnalysis:adv.includes('XLSX.utils.sheet_to_json'),
+   knowledgeOfficialLinks:know.includes('hrsd.gov.sa')&&know.includes('gosi.gov.sa')&&know.includes('stats.gov.sa'),
+   referenceCount:referenceCount>=8,quizCount:quizCount>=16,
    snapshotOcc:snap.includes("count:2122"),snapshotLocalization:snap.includes("count:15"),snapshotFines:snap.includes("count:57"),snapshotDiscipline:snap.includes("count:50"),snapshotNitaqat:snap.includes('nitaqat.length!==41')
   };
   const tests=[];const t=(name,actual,expected,ok=Object.is(actual,expected))=>tests.push({name,actual,expected,ok});
@@ -35,10 +40,12 @@ export default async function handler(req,res){
   const fi=w=>w<=20?0:w<=49?1:2;t('Fine category C at 20 workers',fi(20),0);t('Fine category B at 21 workers',fi(21),1);t('Fine category A at 50 workers',fi(50),2);
   t('Fine multiplication by unit',10000*3,30000);
   t('Discipline 5% daily wage',6000/30*.05,10,eq(6000/30*.05,10));
+  t('Official references count',referenceCount,8,referenceCount>=8);
+  t('Audited quiz count',quizCount,16,quizCount>=16);
   const dataNames=[['OCC',2122],['NQ_DATA',15],['FINE_DATA',57],['VI_DATA',50]];
   const counts={};for(const [n,expected] of dataNames){const r=await fetch(REF+encodeURIComponent(n),{cache:'no-store'});if(!r.ok)throw new Error(n+' data HTTP '+r.status);const j=await r.json();counts[n]=Array.isArray(j.data)?j.data.length:-1;t('Dataset '+n+' count',counts[n],expected)}
   const failed=tests.filter(x=>!x.ok);const badSources=Object.entries(sourceChecks).filter(([,v])=>!v).map(([k])=>k);
-  const ok=coreSyntax&&advSyntax&&!failed.length&&!badSources.length;
-  res.status(ok?200:500).json({ok,syntax:{core:coreSyntax,advanced:advSyntax,coreError,advError},sourceChecks,tests:{passed:tests.length-failed.length,failed:failed.length,items:tests},datasets:counts,nitaqatActivities:41});
+  const ok=coreSyntax&&advSyntax&&knowSyntax&&!failed.length&&!badSources.length;
+  res.status(ok?200:500).json({ok,syntax:{core:coreSyntax,advanced:advSyntax,knowledge:knowSyntax,coreError,advError,knowError},sourceChecks,tests:{passed:tests.length-failed.length,failed:failed.length,items:tests},datasets:counts,nitaqatActivities:41,references:referenceCount,quizQuestions:quizCount});
  }catch(e){res.status(500).json({ok:false,error:String(e.message||e)})}
 }
