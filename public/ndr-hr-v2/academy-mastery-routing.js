@@ -1,0 +1,1 @@
+(()=>{'use strict';window.addEventListener('click',e=>{const card=e.target.closest?.('.track');if(!card)return;if(e.target.closest('button,a,input,textarea,label'))return;const b=card.querySelector('[data-mastery]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();b.click()},true)})();
