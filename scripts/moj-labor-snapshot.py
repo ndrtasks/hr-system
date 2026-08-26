@@ -7,10 +7,11 @@ OUT=Path('tmp/moj-labor-raw.json')
 HEAD={'Content-Type':'application/json;charset=UTF-8','User-Agent':'Mozilla/5.0'}
 COURT_TYPE=2
 TARGET=65
+MAX_PAGES=30
 
 def post(page):
     payload={'pageNumber':page,'pageSize':12,'viewType':'grid','courtTypes':COURT_TYPE,'sortingBy':2}
-    r=requests.post(LIST,json=payload,headers=HEAD,timeout=20)
+    r=requests.post(LIST,json=payload,headers=HEAD,timeout=15)
     r.raise_for_status(); return (((r.json() or {}).get('model') or {}).get('judgementsCollection') or [])
 
 def clean(j):
@@ -18,9 +19,12 @@ def clean(j):
     return {'id':jid,'judgmentNumber':str(j.get('judgementNumber') or ''),'caseNumber':str(j.get('caseNumber') or ''),'courtName':str(j.get('courtName') or ''),'courtType':j.get('courtType'),'judgmentDate':str(j.get('judgementDate') or ''),'hijriYear':j.get('hijriYear'),'city':str(j.get('city') or ''),'isAppeal':bool(j.get('isAppeal')),'url':f'https://laws.moj.gov.sa/ar/JudicialDecisionsList/2/{jid}'}
 
 def main():
-    rows=[];seen=set()
-    for page in range(1,10):
-        batch=post(page)
+    rows=[];seen=set();page_stats=[];errors=[]
+    for page in range(1,MAX_PAGES+1):
+        try: batch=post(page)
+        except Exception as e:
+            errors.append({'page':page,'error':repr(e)});continue
+        page_stats.append({'page':page,'returned':len(batch)})
         if not batch: break
         for j in batch:
             jid=str(j.get('id') or '')
@@ -28,10 +32,9 @@ def main():
             seen.add(jid);rows.append(clean(j))
             if len(rows)>=TARGET: break
         if len(rows)>=TARGET: break
-        time.sleep(.1)
-    if len(rows)<TARGET: raise RuntimeError(f'Expected at least {TARGET} labor judgments, got {len(rows)}')
-    data={'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'source':'Saudi Ministry of Justice laws portal','courtType':COURT_TYPE,'count':len(rows),'judgments':rows[:TARGET]}
+        time.sleep(.08)
+    data={'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'source':'Saudi Ministry of Justice laws portal','courtType':COURT_TYPE,'target':TARGET,'count':len(rows),'pageStats':page_stats,'errors':errors,'judgments':rows[:TARGET]}
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
-    print('MOJ labor snapshot:',COURT_TYPE,len(rows[:TARGET]),rows[0]['judgmentNumber'],rows[-1]['judgmentNumber'])
+    print('MOJ labor snapshot:',COURT_TYPE,'unique=',len(rows),'pages=',len(page_stats),'errors=',len(errors))
 
 if __name__=='__main__': main()
