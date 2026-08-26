@@ -1,0 +1,8 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const P='public/ndr-hr-v2/academy.html';let s=await readFile(P,'utf8');
+function rep(a,b,n){if(!s.includes(a))throw new Error('v3 academy UI patch missing: '+n);s=s.replace(a,b)}
+rep('<button data-view="cases">القضايا</button><a href="./law.html">نظام العمل</a>','<button data-view="cases">القضايا</button><button data-view="updates">المستجدات</button><a href="./law.html">نظام العمل</a>','updates nav');
+rep('<div class="exam-features"><span>5 صفحات</span><span>شرح لكل خطأ</span><span>أسئلة حالات</span><span>تجديد عند الإعادة</span></div>','<div class="exam-features"><span>5 صفحات</span><span>شرح لكل خطأ</span><span>أسئلة حالات</span><span>تجديد عند الإعادة</span></div><p id="examRefreshState" style="color:#91a9bd;font-size:10px;margin:0 0 18px">بنك محلي موسع + تحديث يومي/AI عند بدء الاختبار</p>','refresh indicator');
+rep('<section id="view-ai" class="view">','<section id="view-updates" class="view"><div class="cases-head"><span class="micro">OFFICIAL HR UPDATES</span><h1>مستجدات HR الرسمية</h1><p>فحص مباشر للمصدر الرسمي المرتبط بنظام العمل واللوائح والأدلة. إذا تعذر المصدر، يظهر آخر Snapshot موثوق بدل صفحة فارغة.</p></div><div id="updatesMeta" class="exam-features"><span>جاري الفحص...</span></div><div id="updatesGrid" class="cases-grid"></div></section><section id="view-ai" class="view">','updates view');
+rep('<script src="./academy.js"></script>','<script src="./academy.js"></script><script src="./academy-extra.js"></script>','extra script');
+await writeFile(P,s,'utf8');console.log('NDR HR Academy v3 UI updates view added');
