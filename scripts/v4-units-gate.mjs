@@ -2,10 +2,10 @@ import {readFile,writeFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const base='public/ndr-hr-v2/';
 const files=['academy-unit-data-1.js','academy-unit-data-2.js','academy-unit-data-3.js','academy-unit-data-4.js'];
-const srcs=await Promise.all(files.map(f=>readFile(base+f,'utf8')));
+const [srcs,routing]=await Promise.all([Promise.all(files.map(f=>readFile(base+f,'utf8'))),readFile(base+'academy-mastery-routing.js','utf8')]);
 const sandbox={window:{NDR_UNIT_CASES:{}}};vm.createContext(sandbox);
 let syntax=true,error='';
-try{for(const s of srcs)new vm.Script(s).runInContext(sandbox)}catch(e){syntax=false;error=e.message}
+try{for(const s of srcs)new vm.Script(s).runInContext(sandbox);new Function(routing)}catch(e){syntax=false;error=e.message}
 const U=sandbox.window.NDR_UNIT_CASES||{},entries=Object.entries(U);
 const tracks=['workforce','recruit','onboard','attendance','relations','payroll','performance','offboard','rewards','talent','gov','policy','experience','analytics'];
 const blockers=[],warnings=[];
@@ -26,9 +26,18 @@ for(const [id,u] of entries){
 }
 const perTrack=Object.fromEntries(tracks.map(t=>[t,entries.filter(([,u])=>u.track===t).length]));
 const idsOk=tracks.every(t=>[0,1,2,3].every(i=>U[`${t}-${i}`]));
-const checks={syntax,count56:entries.length===56,exactFourPerTrack:tracks.every(t=>perTrack[t]===4),allIds:idsOk,noStructuralBlockers:blockers.length===0};
+const checks={
+ syntax,
+ count56:entries.length===56,
+ exactFourPerTrack:tracks.every(t=>perTrack[t]===4),
+ allIds:idsOk,
+ noStructuralBlockers:blockers.length===0,
+ strictDepth:warnings.length===0,
+ adaptiveThreshold:routing.includes('score(track)<70')&&routing.includes('unitsPassed(track)'),
+ capstoneUnlock:routing.includes("[0,1,2,3].every")&&routing.includes(">=80")&&routing.includes('!unitsPassed(track)')
+};
 const failed=Object.entries(checks).filter(([,v])=>!v).map(([k])=>k);
 const report={ok:!failed.length,strictDepthReady:warnings.length===0,generatedAt:new Date().toISOString(),checks,failed,error,count:entries.length,perTrack,blockers,warnings};
 await writeFile(base+'units-audit.json',JSON.stringify(report,null,2),'utf8');
-console.log(`NDR HR 56-unit gate: ${entries.length}/56; tracks=${Object.values(perTrack).filter(x=>x===4).length}/14; blockers=${blockers.length}; depth warnings=${warnings.length}`);
-if(failed.length)throw new Error('56-unit structural gate failed: '+failed.join(', ')+' '+JSON.stringify(blockers.slice(0,8))+' '+error);
+console.log(`NDR HR 56-unit strict gate: ${entries.length}/56; tracks=${Object.values(perTrack).filter(x=>x===4).length}/14; blockers=${blockers.length}; depth warnings=${warnings.length}; adaptive=${checks.capstoneUnlock}`);
+if(failed.length)throw new Error('56-unit strict gate failed: '+failed.join(', ')+' blockers='+JSON.stringify(blockers.slice(0,5))+' warnings='+JSON.stringify(warnings.slice(0,8))+' '+error);
