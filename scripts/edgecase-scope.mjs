@@ -1,0 +1,5 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const P='public/ndr-hr-v2/index.html';let s=await readFile(P,'utf8');
+const old='<section class="tools" id="tools"></section>';
+const neu='<section style="margin:14px 0 22px;padding:16px 18px;border:1px solid #f0c36a;border-radius:16px;background:#fff8e8;color:#6d4a00;line-height:1.8"><b>نطاق التطبيق:</b> الحاسبات النظامية مخصصة للعلاقات الخاضعة للأحكام العامة لنظام العمل السعودي. إذا كان العامل من فئة مستثناة أو خاضعة للائحة خاصة بموجب المادة 7 أو لنظام وظيفي آخر، فلا تعتمد النتيجة قبل الرجوع للنظام/اللائحة الخاصة.</section><section class="tools" id="tools"></section>';
+if((s.split(old).length-1)!==1)throw new Error('scope insertion point mismatch');s=s.replace(old,neu);if(!s.includes('نطاق التطبيق:'))throw new Error('scope warning missing');await writeFile(P,s,'utf8');console.log('NDR HR statutory scope warning added');
