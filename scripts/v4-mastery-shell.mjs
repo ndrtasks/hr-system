@@ -1,8 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 const p='public/ndr-hr-v2/academy.html';let s=await readFile(p,'utf8');
-if(!s.includes('./academy-mastery.css'))s=s.replace('</head>','<link rel="stylesheet" href="./academy-mastery.css"></head>');
-if(!s.includes('./academy-judgments.css'))s=s.replace('</head>','<link rel="stylesheet" href="./academy-judgments.css"></head>');
-if(!s.includes('./academy-mastery.js'))s=s.replace('</body>','<script src="./academy-mastery.js"></script></body>');
-if(!s.includes('./academy-mastery-routing.js'))s=s.replace('</body>','<script src="./academy-mastery-routing.js"></script></body>');
-if(!s.includes('./academy-judgments.js'))s=s.replace('</body>','<script src="./academy-judgments.js"></script></body>');
-await writeFile(p,s,'utf8');console.log('NDR HR Academy v4: mastery + judicial learning linked');
+for(const css of ['./academy-mastery.css','./academy-judgments.css','./academy-units.css'])if(!s.includes(css))s=s.replace('</head>',`<link rel="stylesheet" href="${css}"></head>`);
+const scripts=['./academy-mastery.js','./academy-unit-data-1.js','./academy-unit-data-2.js','./academy-unit-data-3.js','./academy-unit-data-4.js','./academy-units.js','./academy-mastery-routing.js','./academy-judgments.js'];
+for(const src of scripts)if(!s.includes(src))s=s.replace('</body>',`<script src="${src}"></script></body>`);
+await writeFile(p,s,'utf8');console.log('NDR HR Academy v4: mastery + 56 units + judicial learning linked');
