@@ -1,0 +1,12 @@
+/* NDR HR Intelligence — true wide-screen layout fix */
+.shell{grid-template-columns:278px minmax(0,1fr)!important}
+.sidebar{width:auto!important}
+.main{margin-right:0!important;width:100%!important;min-width:0!important}
+.content{width:100%!important;max-width:none!important;margin:0!important;padding:28px 30px 72px!important}
+.commandgrid{grid-template-columns:minmax(0,1.55fr) minmax(320px,.55fr)!important;gap:18px!important}
+.findingpage,.section{width:100%!important}
+.ndr-edit-target{grid-template-columns:48px minmax(0,1fr)!important}
+#ndrCopyTarget{display:none!important}
+@media(min-width:1500px){.content{padding-left:34px!important;padding-right:34px!important}.dashboardHero{grid-template-columns:minmax(0,1.3fr) minmax(420px,.7fr)!important}.commandgrid{grid-template-columns:minmax(0,1.7fr) minmax(330px,.5fr)!important}}
+@media(max-width:1180px){.shell{grid-template-columns:84px minmax(0,1fr)!important}.sidebar{width:auto!important}.main{margin-right:0!important}.content{padding:22px 18px 64px!important}.commandgrid{grid-template-columns:1fr!important}}
+@media(max-width:680px){.shell{display:block!important}.sidebar{display:none!important}.main{margin:0!important}.content{padding:16px 12px 74px!important}}
