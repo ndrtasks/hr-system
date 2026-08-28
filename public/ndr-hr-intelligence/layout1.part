@@ -1,0 +1,37 @@
+
+<div class="aurora"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div><div class="noise"></div>
+<section id="loginView" class="loginwrap hidden">
+  <div class="card login">
+    <div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>HR INTELLIGENCE CONTROL CENTER</small></div></div>
+    <h2>دخول مركز الرقابة</h2><p>وصول مخصص لفريق الموارد البشرية والإدارة المخولة.</p>
+    <input id="password" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+    <div id="loginMsg" class="loginmsg"></div>
+    <button id="loginBtn" class="primary" style="width:100%">دخول آمن</button>
+  </div>
+</section>
+<div id="appShell" class="shell hidden">
+<aside class="sidebar">
+  <div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>HR INTELLIGENCE</small></div></div>
+  <div class="workspace"><div><small>مساحة العمل</small><b>المعهد / بيئة الاختبار</b></div><span id="sideStatus" class="liveorb"></span></div>
+  <div class="navlabel">CONTROL CENTER</div>
+  <nav class="nav">
+    <button class="active" data-page="overview"><span class="navicon">◈</span><span class="navtext">مركز الرقابة</span></button>
+    <button data-page="findingsPage"><span class="navicon">⌁</span><span class="navtext">الحالات والمخاطر</span></button>
+    <button data-page="rulesPage"><span class="navicon">⬡</span><span class="navtext">محرك القواعد</span></button>
+    <button data-page="integrationPage"><span class="navicon">⇄</span><span class="navtext">ربط Odoo</span></button>
+  </nav>
+  <div class="sidefooter"><span class="mini">PRODUCT LAB • V2</span><strong>طبقة رقابة مستقلة</strong><p>تقرأ العمليات، تكشف التعارضات، وتحوّل بيانات HR إلى قرارات واضحة.</p><div class="privacyline"><span class="lockshape">◇</span><span>Read-only architecture</span></div></div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="titlebox"><div class="crumb">NDR / HR AUDIT / <span id="crumbTitle">OVERVIEW</span></div><h1 id="pageTitle">مركز الرقابة</h1><p id="generated">بانتظار أول تدقيق</p></div>
+    <div class="topactions"><span class="statuspill"><i id="statusDot" class="statusdot"></i><span id="modeText">فحص الاتصال</span></span><button id="refreshBtn" class="ghost">↻ تحديث</button><button id="runBtn" class="primary"><span>تشغيل التدقيق</span><b>↗</b></button></div>
+  </header>
+  <div class="content">
+    <section id="overview" class="panelpage active">
+      <div class="dashboardHero">
+        <div class="card healthcard hover">
+          <div class="scoreblock"><div class="sectioneyebrow"><i></i>HR HEALTH INDEX</div><div class="scoremain"><div id="score" class="score">--</div><div class="scorecopy"><strong id="risk">بانتظار الفحص</strong><span>مؤشر مركب حسب عدد وشدة الملاحظات</span></div></div><div class="healthmeter"><span id="scoreBar"></span></div><div class="healthfoot"><span id="summaryLine">لا توجد بيانات بعد</span><span id="sourceText">—</span></div></div>
+          <div class="healthviz"><div class="rings"><div class="riskorbit"></div><div class="ringscore"><b id="ringTotal">0</b><span>حالة تحتاج مراجعة</span></div><i class="orbitdot"></i><div class="orbitlabels"><span class="l1">عقود</span><span class="l2">حضور</span><span class="l3">إجازات</span></div></div></div>
+        </div>
+    
