@@ -6,7 +6,7 @@ const POLL_MS=10000,FULL_MS=300000,CACHE_KEY='ndr-live-audit-cache-v4',CACHE_MAX
 let lastFingerprint='',lastSources={},lastToken='',lastFull=0,auditBusy=false,watchBusy=false,started=false;
 const token=()=>window.NDROdooVault?.token||localStorage.getItem('ndr-connector-token')||'';
 const baseUrl=()=>String(localStorage.getItem('ndr-odoo-url')||'').replace(/\/$/,'');
-function migrateRules(){try{const cfg=JSON.parse(localStorage.getItem('ndr-rule-config')||'{}')||{};cfg.R020={...(cfg.R020||{}),enabled:true};localStorage.setItem('ndr-rule-config',JSON.stringify(cfg));localStorage.setItem('ndr-r020-live-migrated','2');if(typeof state!=='undefined')state.ruleConfig=cfg}catch{}}
+function migrateRules(){try{const cfg=JSON.parse(localStorage.getItem('ndr-rule-config')||'{}')||{};cfg.R020={...(cfg.R020||{}),enabled:true};cfg.R003={...(cfg.R003||{}),enabled:true};localStorage.setItem('ndr-rule-config',JSON.stringify(cfg));localStorage.setItem('ndr-r020-live-migrated','3');if(typeof state!=='undefined')state.ruleConfig=cfg}catch{}}
 const policy=()=>{try{return{...(JSON.parse(localStorage.getItem('ndr-policy-overrides')||'null')||{}),rules:JSON.parse(localStorage.getItem('ndr-rule-config')||'{}')||{}}}catch{return{rules:{}}}};
 const findingSig=d=>{try{return(d?.findings||[]).map(f=>JSON.stringify([f.code,f.severity,f.ref?.model||'',f.ref?.id||'',f.employeeRef?.id||'',f.title||'',f.detail||'',f.facts||[],f.relatedDates||[]])).sort().join('|')}catch{return''}};
 const sourceSig=x=>x?`${x.ok?1:0}:${x.count||0}:${x.id||0}:${x.writeDate||''}`:'';
@@ -14,7 +14,7 @@ function diffSources(a={},b={}){const keys=new Set([...Object.keys(a||{}),...Obj
 function ready(){return typeof state!=='undefined'&&typeof render==='function'&&typeof trackRun==='function'}
 function quietToast(msg){try{if(typeof toast==='function')toast(msg)}catch{}}
 function nowText(){try{return new Intl.DateTimeFormat('ar-SA',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}catch{return''}}
-function sourceArabic(x){return({attendance:'الحضور',leaves:'الإجازات',planning:'Planning',employees:'الموظفون',contracts:'العقود',versions:'نسخ العقود',calendarLines:'جدول الدوام',calendars:'التقويم',companies:'الشركة',calendarLeaves:'العطل الرسمية',leaveTypes:'أنواع الإجازات',departments:'الأقسام',resources:'الموارد'}[x]||x)}
+function sourceArabic(x){return({attendance:'الحضور',leaves:'الإجازات',planning:'Planning',employees:'الموظفون',contracts:'العقود',employeeVersions:'نسخ العقود',calendarLines:'جدول الدوام',calendars:'التقويم',companies:'الشركة',calendarLeaves:'العطل الرسمية',leaveTypes:'أنواع الإجازات',departments:'الأقسام',resources:'الموارد'}[x]||x)}
 function ensureLiveBadge(){
   if(document.getElementById('ndrLiveState'))return;
   const host=document.querySelector('.topactions');if(!host)return;
@@ -47,9 +47,9 @@ async function runAudit(reason='watch',notify=false,changedSources=[]){
     liveState(`محدث ${nowText()} • ${Number(d.summary?.total||0)} حالة`);
     if(notify&&findingsChanged)quietToast('NDR التقط التغيير من Odoo وحدث الحالات تلقائيا');
     return d
-  }catch(e){console.warn('NDR live audit:',e);liveState('تعذر آخر تحليل • سيعيد المحاولة','bad');return null}finally{auditBusy=false}
+  }catch(e){console.warn('NDR live audit:',e);liveState('فشل آخر تحليل • إعادة المحاولة تلقائيا','bad');return null}finally{auditBusy=false}
 }
-async function captureFingerprint(){const t=token();if(!t)return;try{const d=await fetchWatch(t);lastFingerprint=String(d.fingerprint||'');lastSources=d.sources||{};lastToken=t}catch(e){console.warn('NDR fingerprint sync:',e)}}
+async function captureFingerprint(){const t=token();if(!t)return false;try{const d=await fetchWatch(t);lastFingerprint=String(d.fingerprint||'');lastSources=d.sources||{};lastToken=t;return true}catch(e){console.warn('NDR fingerprint sync:',e);return false}}
 async function checkChanges(){
   if(watchBusy||document.visibilityState==='hidden')return;
   const t=token();if(!t){liveState('بانتظار اتصال Odoo','bad');return}
@@ -57,12 +57,20 @@ async function checkChanges(){
   watchBusy=true;
   try{
     const d=await fetchWatch(t),fp=String(d.fingerprint||''),sources=d.sources||{};
-    if(!lastFingerprint){lastFingerprint=fp;lastSources=sources;if(Date.now()-lastFull>1500)await runAudit('initial',false,Object.keys(sources));else liveState(`متصل • آخر فحص ${nowText()}`);return}
-    if(fp&&fp!==lastFingerprint){const changed=diffSources(lastSources,sources);lastFingerprint=fp;lastSources=sources;await runAudit('odoo-change',true,changed);return}
+    if(!lastFingerprint){
+      const result=await runAudit('initial',false,Object.keys(sources));
+      if(result){lastFingerprint=fp;lastSources=sources}else setTimeout(checkChanges,3000);
+      return
+    }
+    if(fp&&fp!==lastFingerprint){
+      const changed=diffSources(lastSources,sources),result=await runAudit('odoo-change',true,changed);
+      if(result){lastFingerprint=fp;lastSources=sources}else setTimeout(checkChanges,3000);
+      return
+    }
     if(Date.now()-lastFull>FULL_MS)await runAudit('periodic',false,[]);else liveState(`متصل • آخر فحص ${nowText()}`)
   }catch(e){console.warn('NDR change watch:',e);liveState('تعذر فحص المصدر • سيعيد المحاولة','bad')}finally{watchBusy=false}
 }
-async function localWrite(){await new Promise(r=>setTimeout(r,250));await runAudit('ndr-write',true,['attendance']);setTimeout(captureFingerprint,1200)}
+async function localWrite(){await new Promise(r=>setTimeout(r,250));const result=await runAudit('ndr-write',true,['attendance']);if(result)setTimeout(captureFingerprint,1200);else setTimeout(checkChanges,3000)}
 function start(){
   if(started)return;started=true;migrateRules();ensureLiveBadge();restoreSnapshot();
   const runBtn=document.getElementById('runBtn');if(runBtn){const s=runBtn.querySelector('span');if(s)s.textContent='فحص الآن';runBtn.title='المزامنة تلقائية؛ استخدم هذا الزر فقط إذا أردت فحصا فوريا'}
@@ -71,7 +79,7 @@ function start(){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkChanges()});
   window.addEventListener('online',()=>checkChanges());
   setInterval(checkChanges,POLL_MS);
-  setTimeout(async()=>{await runAudit('boot',false,[]);await captureFingerprint()},120);
+  setTimeout(async()=>{const result=await runAudit('boot',false,[]);if(result)await captureFingerprint();else setTimeout(checkChanges,1500)},120);
   setTimeout(checkChanges,2500);
   window.NDRLiveWatch={forceCheck:checkChanges,forceAudit:()=>runAudit('manual-live',false,[]),status:()=>({pollMs:POLL_MS,lastFull,lastFingerprint:!!lastFingerprint,lastToken:!!lastToken,cached:!!localStorage.getItem(CACHE_KEY)})}
 }
