@@ -1,36 +1,55 @@
 (()=>{
+  'use strict';
   if(window.__ndrQaDockGuard)return;window.__ndrQaDockGuard=true;
-  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const baseItems=[
     ['overview','◈','الرئيسية'],
     ['findingsPage','⌁','الحالات'],
     ['rulesPage','⬡','القواعد'],
     ['integrationPage','⇄','Odoo']
   ];
+  let raf=0;
   function ensureItems(nav){
     for(const [page,icon,label] of baseItems){
       if(nav.querySelector(`button[data-page="${page}"]`))continue;
-      const b=document.createElement('button');b.dataset.page=page;b.innerHTML=`<span class="navicon">${icon}</span><span class="navtext">${label}</span>`;nav.appendChild(b);
+      const b=document.createElement('button');
+      b.dataset.page=page;
+      b.innerHTML=`<span class="navicon">${icon}</span><span class="navtext">${label}</span>`;
+      nav.appendChild(b);
     }
   }
-  function force(el,prop,val){try{el.style.setProperty(prop,val,'important')}catch{}}
   function harden(){
-    const side=document.querySelector('.sidebar'),nav=side?.querySelector('.nav');if(!side||!nav)return false;
+    raf=0;
+    const side=document.querySelector('.sidebar'),nav=side?.querySelector('.nav');
+    if(!side||!nav)return false;
     ensureItems(nav);
-    [['display','flex'],['visibility','visible'],['opacity','1'],['pointer-events','auto']].forEach(([p,v])=>force(nav,p,v));
-    force(nav,'flex','1 1 auto');force(nav,'width','auto');force(nav,'min-width','0');force(nav,'height','54px');force(nav,'position','relative');force(nav,'z-index','2');
-    nav.querySelectorAll('button[data-page]').forEach(b=>{
-      [['display','flex'],['visibility','visible'],['opacity','1'],['pointer-events','auto'],['position','relative'],['transform','none'],['flex','0 0 auto']].forEach(([p,v])=>force(b,p,v));
-      force(b,'min-width','126px');force(b,'height','52px');
-    });
+    side.classList.add('ndr-dock-ready');
+    nav.classList.add('ndr-dock-nav-ready');
     return true;
   }
+  function schedule(){if(raf)return;raf=requestAnimationFrame(harden)}
+  function clearAttendanceCaches(){
+    try{
+      for(let i=sessionStorage.length-1;i>=0;i--){
+        const k=sessionStorage.key(i)||'';
+        if(k.startsWith('ndr-attendance-cache-v3:')||k.startsWith('ndr-attendance-cache-v4:'))sessionStorage.removeItem(k);
+      }
+    }catch{}
+  }
   (async()=>{
-    for(let i=0;i<120;i++){if(harden())break;await sleep(50)}
+    for(let i=0;i<120;i++){
+      if(harden())break;
+      await new Promise(r=>setTimeout(r,50));
+    }
     const root=document.getElementById('ndr-root')||document.body;
-    const mo=new MutationObserver(()=>harden());mo.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
-    window.addEventListener('resize',harden,{passive:true});
-    window.addEventListener('ndr:attendance-view',harden);
-    setTimeout(harden,800);setTimeout(harden,2000);
+    // Child-list only: observing style/class attributes here can cause a self-triggering loop.
+    const mo=new MutationObserver(schedule);
+    mo.observe(root,{subtree:true,childList:true});
+    window.addEventListener('ndr:attendance-view',schedule);
+    window.addEventListener('ndr:attendance-changed',clearAttendanceCaches);
+    window.addEventListener('ndr:audit-updated',e=>{
+      const changed=Array.isArray(e?.detail?.changedSources)?e.detail.changedSources:[];
+      if(changed.some(x=>['attendance','leaves','leaveTypes','planning','resources','employees','departments','calendarLines','calendarLeaves','calendars','companies','employeeVersions','contracts'].includes(x)))clearAttendanceCaches();
+    });
+    setTimeout(schedule,500);setTimeout(schedule,1600);
   })();
 })();
