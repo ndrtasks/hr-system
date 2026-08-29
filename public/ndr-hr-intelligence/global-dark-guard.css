@@ -1,0 +1,44 @@
+/* Global dark-surface guard — loaded last. Prevents legacy premium-v3 light tokens from leaking into any NDR workspace. */
+:root{--bg:#020814!important;--paper:#061522!important;--paper2:#081c2c!important;--ink:#eefaff!important;--muted:#84aabd!important;--muted2:#648ea2!important;--line:#123e56!important;--line2:#10364d!important;--redSoft:#2a1118!important;--amberSoft:#2a1d0a!important;--greenSoft:#08261b!important;--blueSoft:#071e31!important}
+html,body,#ndr-root,.shell,.main,.content,.panelpage{background-color:#020814!important;color:#eafaff!important}
+
+/* Findings summary groups were still inheriting the old white .card design. */
+#findingsPage .casegroups{background:transparent!important}
+#findingsPage .casegroup{border:1px solid #123f59!important;background:linear-gradient(155deg,#071827,#04111d)!important;color:#dff4fb!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 12px 28px rgba(0,0,0,.18)!important}
+#findingsPage .casegroup:hover{background:linear-gradient(155deg,#092238,#051522)!important;border-color:#1b6888!important}
+#findingsPage .casegroup h4,#findingsPage .casegroupcount b{color:#f1fbff!important}
+#findingsPage .casegroup p,#findingsPage .casegroupcount span,#findingsPage .casegroupfoot span{color:#86adbd!important}
+#findingsPage .casegroupicon{background:#071b2b!important;border:1px solid #164a65!important;color:#8deaff!important}
+#findingsPage .casegroupfoot{border-top-color:#10364d!important}
+#findingsPage .casegroupfoot button{background:transparent!important;border:0!important;color:#55dfff!important}
+
+/* Findings controls/list: never use a light inherited paper surface. */
+#findingsPage .pagehero,#findingsPage .casecontrol,#findingsPage .casefilterline,#findingsPage .listmeta{background:transparent!important;color:#dff7ff!important;border-color:#12384f!important}
+#findingsPage .searchbox,#findingsPage .selectbox{background:#04111d!important;color:#eafaff!important;border:1px solid #154761!important;color-scheme:dark!important}
+#findingsPage .findingpage{background:linear-gradient(155deg,#061522,#03101b)!important;border:1px solid #123f59!important;color:#eafaff!important}
+#findingsPage .finding{background:transparent!important;border-color:#10364d!important;color:#dff4fb!important}
+#findingsPage .finding:hover{background:#071d2e!important}
+#findingsPage .finding h4{color:#f1fbff!important}
+#findingsPage .finding p,#findingsPage .finding small,#findingsPage .findingmeta,#findingsPage .findingdesc{color:#7fa7b8!important}
+#findingsPage .pagination,#findingsPage .bulkbar{background:#04111d!important;border-color:#123e56!important;color:#b9dce8!important}
+#findingsPage .clearcategory,#findingsPage .pagebtn,#findingsPage .openbtn,#findingsPage .bulkbar button{background:#061827!important;color:#c6e9f4!important;border:1px solid #16506b!important;box-shadow:none!important}
+
+/* Rules, Odoo and attendance: final defensive layer for every operational container. */
+#rulesPage .rulecommand,#rulesPage .policysplit,#rulesPage .documentmap,#rulesPage .rulegroup,#rulesPage .rulecontrol,#rulesPage .rulecfgbox,
+#integrationPage .liveconnect,#integrationPage .connectioncard,#integrationPage .qualityhero,#integrationPage .qualityscore,
+#attendancePage .att-toolbar,#attendancePage .att-summary,#attendancePage .att-sheet,#attendancePage .att-table-wrap{
+ background:linear-gradient(155deg,#071827,#04111d)!important;border-color:#123f59!important;color:#eafaff!important;box-shadow:none!important
+}
+
+/* Generic operational surfaces and native controls. Deliberately excludes severity/status badges. */
+.panelpage input:not([type="checkbox"]):not([type="radio"]),.panelpage select,.panelpage textarea{background:#04111d!important;color:#eafaff!important;border-color:#154761!important;color-scheme:dark!important}
+.panelpage input::placeholder,.panelpage textarea::placeholder{color:#668fa3!important}
+.panelpage .empty{background:transparent!important;color:#719caf!important}
+
+/* Drawers/modals/notifications/employee views must stay in the same navy family. */
+.drawer,.modal,.att-modal,.att-bulk,.ndr-notify-drawer,.employeeworkspace,.exceptionform{background:linear-gradient(155deg,#071827,#04111d)!important;color:#eafaff!important;border-color:#154761!important}
+.drawerback,.modalback,.att-modalback,.att-bulkback,.ndr-notify-shade{background-color:rgba(0,5,12,.82)!important}
+
+/* Text contrast floor for dark surfaces. */
+#findingsPage,#rulesPage,#integrationPage,#attendancePage{color:#dff4fb!important}
+#findingsPage h2,#findingsPage h3,#findingsPage h4,#rulesPage h2,#rulesPage h3,#rulesPage h4,#integrationPage h2,#integrationPage h3,#attendancePage h2,#attendancePage h3{color:#f2fbff!important}
