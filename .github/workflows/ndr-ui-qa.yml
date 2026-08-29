@@ -1,7 +1,7 @@
 name: NDR UI QA
 on:
   push:
-    branches: [ndr-ui-qa]
+    branches: [ndr-ui-qa, ndr-ui-repair-fullcase]
   workflow_dispatch:
 
 jobs:
