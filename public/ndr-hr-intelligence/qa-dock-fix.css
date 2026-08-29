@@ -107,6 +107,46 @@
 #rulesPage .ruleinfo>p,
 #integrationPage .liveconnectcopy>p{display:none!important}
 
+/* Odoo: use the width, remove dead air, keep a clear hierarchy. */
+#integrationPage .liveconnect{
+  display:grid!important;
+  grid-template-columns:260px minmax(0,1fr)!important;
+  gap:14px!important;
+  align-items:start!important;
+  padding:16px!important;
+  min-height:0!important;
+}
+#integrationPage .liveconnectcopy{padding:8px 6px!important;align-self:stretch!important}
+#integrationPage .liveconnectcopy h3{font-size:18px!important;line-height:1.35!important;margin:8px 0!important}
+#integrationPage .connectform{width:100%!important;min-width:0!important}
+#integrationPage .ndr-secure-panel{grid-column:1/-1!important;margin-top:12px!important}
+#integrationPage .integrationgrid{display:grid!important;grid-template-columns:minmax(0,1.5fr) minmax(300px,.7fr)!important;gap:12px!important}
+#integrationPage .connectioncard{min-height:0!important;padding:16px!important}
+#integrationPage .qualityhero{
+  display:grid!important;
+  grid-template-columns:220px minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:stretch!important;
+  min-height:0!important;
+  margin-top:12px!important;
+  padding:12px!important;
+}
+#integrationPage .qualityscore{min-height:138px!important;height:auto!important}
+#integrationPage .qualitysources,#integrationPage .qualityissues,#integrationPage .probegrid{min-height:0!important}
+
+/* Attendance modal is injected after the theme; force it into the same premium dark language. */
+.att-modalback{background:rgba(0,5,12,.76)!important}
+.att-modal{border:1px solid #16506d!important;background:linear-gradient(155deg,#071827,#04111d)!important;color:#eafaff!important;box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 26px rgba(26,223,255,.08)!important}
+.att-modal-head,.att-modal-foot{background:#061522!important;border-color:#123e56!important}
+.att-modal-head h3{color:#f4fcff!important}.att-modal-head p{color:#739fb2!important}
+.att-modal-body{background:#04111d!important}.att-close{background:#071b2b!important;border-color:#16506d!important;color:#dff8ff!important}
+.att-edit-field label{color:#79a8bb!important}.att-edit-field input,.att-edit-field textarea{background:#020d17!important;border-color:#15506d!important;color:#eefaff!important;color-scheme:dark!important}
+.att-edit-note{background:#071b2b!important;border:1px solid #123f59!important;color:#9bc6d7!important}
+.att-edit-note.warning{background:rgba(139,91,16,.18)!important;border-color:rgba(255,181,46,.36)!important;color:#ffd37a!important}
+
+@media(max-width:900px){
+  #integrationPage .liveconnect,#integrationPage .integrationgrid,#integrationPage .qualityhero{grid-template-columns:1fr!important}
+}
 @media(max-width:760px){
   .sidebar{width:calc(100vw - 18px)!important;bottom:8px!important;height:66px!important;min-height:66px!important}
   .sidebar>.brand{flex-basis:48px!important;width:48px!important;min-width:48px!important;height:48px!important}
