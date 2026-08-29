@@ -1,0 +1,93 @@
+/* QA-only dock hardening. Keeps navigation visible regardless of legacy theme collisions. */
+.sidebar{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:16px!important;
+  transform:translateX(-50%)!important;
+  width:min(960px,calc(100vw - 32px))!important;
+  height:72px!important;
+  min-height:72px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  padding:8px 10px!important;
+  overflow:hidden!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:1200!important;
+  isolation:isolate!important;
+}
+.sidebar>.workspace,.sidebar>.navlabel,.sidebar>.sidefooter{display:none!important}
+.sidebar>.brand{
+  order:0!important;
+  flex:0 0 56px!important;
+  width:56px!important;
+  min-width:56px!important;
+  height:54px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+.sidebar>.brand .brandtext{display:none!important}
+.sidebar>.nav{
+  order:1!important;
+  flex:1 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  height:54px!important;
+  min-height:54px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  position:relative!important;
+  z-index:2!important;
+  scrollbar-width:none!important;
+}
+.sidebar>.nav::-webkit-scrollbar{display:none!important}
+.sidebar>.nav>button[data-page]{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  position:relative!important;
+  transform:none!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:126px!important;
+  height:52px!important;
+  min-height:52px!important;
+  margin:0!important;
+  padding:6px 12px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+}
+.sidebar>.nav>button[data-page] .navicon,.sidebar>.nav>button[data-page] .navtext{
+  display:inline-flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+.main{padding-bottom:112px!important}
+@media(max-width:760px){
+  .sidebar{width:calc(100vw - 18px)!important;bottom:8px!important;height:66px!important;min-height:66px!important}
+  .sidebar>.brand{flex-basis:48px!important;width:48px!important;min-width:48px!important;height:48px!important}
+  .sidebar>.nav{justify-content:flex-start!important;height:48px!important;min-height:48px!important}
+  .sidebar>.nav>button[data-page]{min-width:106px!important;height:48px!important;min-height:48px!important;font-size:11px!important}
+}
