@@ -1,0 +1,60 @@
+/* NDR Attendance Register — operational HR/payroll sheet */
+.att-page{direction:rtl;color:#eaf0f4}
+.att-page *{box-sizing:border-box}
+.att-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:2px 0 18px;padding:0 2px}
+.att-head h2{font-size:25px;margin:4px 0 5px;letter-spacing:-.45px}
+.att-head p{font-size:11px;color:#8194a0;margin:0;line-height:1.8;max-width:720px}
+.att-head .att-kicker{font-size:9px;color:#71b9aa;font-weight:800}
+.att-actions{display:flex;gap:8px;flex-wrap:wrap}
+.att-btn{height:40px;border-radius:11px;padding:0 14px;border:1px solid rgba(255,255,255,.09);background:#0e1b25;color:#dfe8ed;font:700 10px Tajawal,sans-serif;cursor:pointer;transition:.18s ease}
+.att-btn:hover{border-color:rgba(133,204,190,.28);background:#11232e;transform:translateY(-1px)}
+.att-btn.primary{background:#dce9e6;color:#07141b;border-color:#dce9e6;box-shadow:none}
+.att-btn.primary:hover{background:#f0f7f5}
+.att-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.att-toolbar{display:grid;grid-template-columns:180px minmax(220px,1fr) 220px 210px;gap:9px;padding:13px;border:1px solid rgba(255,255,255,.075);border-radius:15px;background:#09151e;margin-bottom:12px}
+.att-field label{display:block;font-size:8px;color:#718691;margin:0 2px 6px}
+.att-field input,.att-field select{width:100%;height:39px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0d1c26;color:#eaf0f4;padding:0 11px;font:600 10px Tajawal,sans-serif;outline:none}
+.att-field input:focus,.att-field select:focus{border-color:rgba(128,202,188,.32);box-shadow:0 0 0 3px rgba(111,191,176,.06)}
+.att-field select option{background:#0b1821}
+.att-summary{display:grid;grid-template-columns:repeat(6,minmax(100px,1fr));border:1px solid rgba(255,255,255,.075);border-radius:15px;background:#0a161f;margin-bottom:12px;overflow:hidden}
+.att-stat{padding:13px 15px;border-inline-start:1px solid rgba(255,255,255,.055)}
+.att-stat:first-child{border-inline-start:0}
+.att-stat span{display:block;font-size:8px;color:#718691;margin-bottom:5px}
+.att-stat b{font-size:20px;line-height:1;color:#eef4f6}
+.att-stat.good b{color:#83d7b0}.att-stat.leave b{color:#8fb8e8}.att-stat.warn b{color:#e4be78}.att-stat.danger b{color:#eb8790}
+.att-sheet{border:1px solid rgba(255,255,255,.08);border-radius:16px;background:#07131b;overflow:hidden}
+.att-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.06);background:#0a1821}
+.att-sheet-head b{font-size:11px}.att-sheet-head span{font-size:8.5px;color:#738793}
+.att-table-wrap{overflow:auto;max-height:calc(100vh - 390px);min-height:320px}
+.att-table{width:100%;border-collapse:separate;border-spacing:0;min-width:1580px;font-size:9px}
+.att-table thead th{position:sticky;top:0;z-index:3;background:#0d1b25;color:#8195a1;text-align:right;font-weight:700;padding:10px 9px;border-bottom:1px solid rgba(255,255,255,.075);white-space:nowrap}
+.att-table tbody td{padding:9px;border-bottom:1px solid rgba(255,255,255,.045);color:#bac7ce;white-space:nowrap;vertical-align:middle}
+.att-table tbody tr:hover td{background:rgba(255,255,255,.018)}
+.att-table td.emp{color:#eff4f6;font-weight:800;min-width:185px}
+.att-table td.muted{color:#718590}.att-table td.num{text-align:center;font-variant-numeric:tabular-nums}
+.att-status{display:inline-flex;align-items:center;min-height:25px;padding:0 8px;border-radius:8px;border:1px solid rgba(255,255,255,.07);font-size:8px;font-weight:800}
+.att-status.present{color:#8ddbb6;background:rgba(106,207,159,.055);border-color:rgba(106,207,159,.12)}
+.att-status.leave{color:#9cbfe9;background:rgba(116,165,224,.06);border-color:rgba(116,165,224,.13)}
+.att-status.conflict{color:#ef9298;background:rgba(234,112,122,.06);border-color:rgba(234,112,122,.15)}
+.att-status.missing{color:#e5c17e;background:rgba(225,179,96,.055);border-color:rgba(225,179,96,.13)}
+.att-status.pending{color:#c4a9df;background:rgba(166,122,203,.06)}
+.att-status.off,.att-status.future{color:#7f929e;background:rgba(255,255,255,.025)}
+.att-edit{height:29px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:#0d1d27;color:#cbd8de;padding:0 9px;font:700 8px Tajawal,sans-serif;cursor:pointer}
+.att-edit:hover{color:#fff;border-color:rgba(132,203,190,.25)}
+.att-edit[disabled]{opacity:.38;cursor:not-allowed}
+.att-empty{padding:60px 20px;text-align:center;color:#728793}
+.att-empty b{display:block;color:#dce6ea;font-size:14px;margin-bottom:7px}.att-empty span{font-size:10px}
+.att-loading{padding:70px 20px;text-align:center;color:#8da0aa;font-size:10px}.att-loading:before{content:"";display:block;width:26px;height:26px;border:2px solid rgba(255,255,255,.09);border-top-color:#7ac8b6;border-radius:50%;margin:0 auto 12px;animation:attSpin .8s linear infinite}@keyframes attSpin{to{transform:rotate(360deg)}}
+.att-error{margin:10px 0;padding:11px 13px;border:1px solid rgba(235,121,132,.16);border-radius:11px;background:rgba(235,121,132,.05);color:#e7a1a7;font-size:9px;display:none}.att-error.show{display:block}
+.att-modalback{position:fixed;inset:0;z-index:95;background:rgba(2,7,11,.74);backdrop-filter:blur(10px);display:none;place-items:center;padding:20px}.att-modalback.show{display:grid}
+.att-modal{width:min(560px,96vw);border:1px solid rgba(255,255,255,.09);border-radius:18px;background:#0a1720;box-shadow:0 35px 100px rgba(0,0,0,.45);overflow:hidden}
+.att-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:19px 20px;border-bottom:1px solid rgba(255,255,255,.065)}
+.att-modal-head h3{font-size:16px;margin:0 0 4px}.att-modal-head p{font-size:9px;color:#748894;margin:0}.att-close{width:32px;height:32px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#0e1e28;color:#d9e2e7;cursor:pointer}
+.att-modal-body{padding:18px 20px}.att-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.att-edit-field{margin-bottom:11px}.att-edit-field label{display:block;font-size:8px;color:#718691;margin:0 2px 6px}.att-edit-field input,.att-edit-field textarea{width:100%;border:1px solid rgba(255,255,255,.085);border-radius:10px;background:#0d1c26;color:#edf3f5;padding:0 11px;font:600 10px Tajawal,sans-serif;outline:none}.att-edit-field input{height:40px}.att-edit-field textarea{min-height:82px;padding-top:10px;resize:vertical;line-height:1.6}.att-edit-field input:focus,.att-edit-field textarea:focus{border-color:rgba(128,202,188,.32)}
+.att-edit-note{padding:10px 12px;border-radius:10px;background:#0e1d26;color:#91a2ab;font-size:9px;line-height:1.65;margin-bottom:12px}.att-edit-note.warning{border:1px solid rgba(231,185,102,.16);color:#d9bd88;background:rgba(231,185,102,.04)}
+.att-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;border-top:1px solid rgba(255,255,255,.06);background:#08141c}
+.att-smallnote{font-size:8px;color:#6f838f;padding:8px 15px 13px}
+@media(max-width:1150px){.att-toolbar{grid-template-columns:1fr 1fr}.att-summary{grid-template-columns:repeat(3,1fr)}.att-stat:nth-child(4){border-inline-start:0}.att-head{align-items:flex-start;flex-direction:column}.att-table-wrap{max-height:none}}
+@media(max-width:700px){.att-toolbar{grid-template-columns:1fr}.att-summary{grid-template-columns:1fr 1fr}.att-stat:nth-child(odd){border-inline-start:0}.att-actions{width:100%}.att-btn{flex:1}.att-edit-grid{grid-template-columns:1fr}}
+@media print{
+ body *{visibility:hidden!important}.att-page,.att-page *{visibility:visible!important}.att-page{position:absolute!important;inset:0!important;background:#fff!important;color:#111!important}.att-head,.att-toolbar,.att-summary,.att-sheet{background:#fff!important;color:#111!important;border-color:#bbb!important}.att-actions,.att-edit,.att-error{display:none!important}.att-table-wrap{max-height:none!important;overflow:visible!important}.att-table{min-width:0!important;font-size:8px!important}.att-table thead th{position:static!important;background:#eee!important;color:#111!important;border-color:#bbb!important}.att-table tbody td{color:#111!important;border-color:#ddd!important}.att-status{color:#111!important;background:#fff!important;border-color:#999!important}.sidebar,.topbar{display:none!important}.main{padding:0!important}.content{padding:0!important}.att-sheet{overflow:visible!important}}
