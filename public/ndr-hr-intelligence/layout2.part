@@ -1,16 +1,1 @@
-     <div class="card executive hover">
-          <div class="execTop"><div class="sectioneyebrow"><i></i>EXECUTIVE BRIEF</div><span class="aiBadge"><i class="aistar"></i>ملخص القرار</span></div>
-          <h2 id="briefHeadline">شغّل التدقيق لرؤية ما يحتاج تدخلك اليوم</h2><p id="briefMessage">سنرتب الملاحظات حسب أثرها ونحوّل كل حالة إلى إجراء واضح بدل عرض بيانات خام.</p><div id="priorities" class="decisionlist"><div class="decision"><span class="decisionrank">01</span><div><b>بانتظار التدقيق</b><small>ستظهر الأولويات هنا تلقائيًا</small></div><span class="arrow">←</span></div></div><div class="execFoot"><span>مرتب حسب الأثر</span><span id="execStamp">NDR Intelligence</span></div>
-        </div>
-      </div>
-      <div class="changestrip"><div class="changeitem new"><div><span>جديدة منذ التدقيق السابق</span><b id="newCases">0</b></div><span>NEW</span></div><div class="changeitem repeat"><div><span>متكررة من فحص سابق</span><b id="repeatCases">0</b></div><span>RECURRING</span></div><div class="changeitem cleared"><div><span>اختفت من المصدر</span><b id="clearedCases">0</b></div><span>CLEARED</span></div><div class="changeitem people"><div><span>موظفون متأثرون</span><b id="affectedEmployees">0</b></div><span>PEOPLE</span></div></div>
-      <div class="metricgrid">
-        <div class="card metric critical"><div class="metrichead"><span class="metricicon">◆</span><span class="metrictrend">Critical exposure</span></div><div class="metricvalue"><b id="critical">0</b><span>حرجة</span></div><div class="metricbar"><i></i></div></div>
-        <div class="card metric high"><div class="metrichead"><span class="metricicon">△</span><span class="metrictrend">Today priority</span></div><div class="metricvalue"><b id="high">0</b><span>عالية</span></div><div class="metricbar"><i></i></div></div>
-        <div class="card metric medium"><div class="metrichead"><span class="metricicon">◇</span><span class="metrictrend">Operational</span></div><div class="metricvalue"><b id="medium">0</b><span>متوسطة</span></div><div class="metricbar"><i></i></div></div>
-        <div class="card metric total"><div class="metrichead"><span class="metricicon">◎</span><span class="metrictrend">Open findings</span></div><div class="metricvalue"><b id="total">0</b><span>إجمالي</span></div><div class="metricbar"><i></i></div></div>
-      </div>
-      <div class="commandgrid">
-        <div class="card section hover"><div class="sectionhead"><div><h3>ما يحتاج تدخلك الآن</h3><p>ترتيب تلقائي حسب درجة الخطورة والأثر التشغيلي</p></div><button class="sectionaction" data-jump="findingsPage">عرض مركز الحالات ←</button></div><div id="topFindings" class="findingsstream"><div class="empty">شغّل التدقيق لعرض الحالات.</div></div></div>
-        <div class="sidecol">
-          <div class="card riskcard hover"><div class="sectionhead"><div><h3>توزيع المخاطر</h3><p>قراءة سريعة لتركيبة الملاحظات</p></div></div><div class="riskcontent"><div id="riskDonut" class="donut"><div class="donutcenter"><b id="donutTotal">0</b><span>إجمالي</span></div></div><div class="legend"><div class="legendrow"><i class="legenddot" style="background:var(--red)"></i><span>حرجة</span><b id="legendCritical">0</b></div><div class="legendrow"><i class="legenddot" style="background:var(--amber)"></i><span>عالية</span><b id="legendHigh">0</b></div><div class="legendrow"><i class="legenddot" style="backgroun
+
