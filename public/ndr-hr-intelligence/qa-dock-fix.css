@@ -85,6 +85,28 @@
   opacity:1!important;
 }
 .main{padding-bottom:112px!important}
+
+/* One page title only. The sticky topbar owns the page title. */
+#findingsPage>.pagehero>div:first-child,
+#rulesPage>.pagehero>div:first-child,
+#integrationPage>.pagehero>div:first-child{display:none!important}
+#findingsPage>.pagehero,#rulesPage>.pagehero,#integrationPage>.pagehero{
+  min-height:0!important;
+  padding:0 0 12px!important;
+  margin:0 0 10px!important;
+  align-items:center!important;
+  background:transparent!important;
+  border:0!important;
+}
+#attendancePage .att-head>div:first-child{display:none!important}
+#attendancePage .att-head{min-height:0!important;padding:0 0 12px!important;justify-content:flex-start!important}
+
+/* Remove explanatory filler; keep operational labels/status only. */
+#rulesPage .policycopy>p,
+#rulesPage .documentmap>div:first-child>p,
+#rulesPage .ruleinfo>p,
+#integrationPage .liveconnectcopy>p{display:none!important}
+
 @media(max-width:760px){
   .sidebar{width:calc(100vw - 18px)!important;bottom:8px!important;height:66px!important;min-height:66px!important}
   .sidebar>.brand{flex-basis:48px!important;width:48px!important;min-width:48px!important;height:48px!important}
