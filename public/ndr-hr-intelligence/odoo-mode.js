@@ -47,6 +47,27 @@
       host.prepend(back);host.prepend(badge);
     };
 
+    const markReady=()=>{
+      const mode=document.getElementById('modeText');if(mode)mode.textContent='Odoo Connected';
+      const generated=document.getElementById('generated');
+      if(generated&&/بانتظار|لا توجد/.test(generated.textContent||''))generated.textContent='متصل بـ Odoo • جاهز لتشغيل التدقيق';
+      const risk=document.getElementById('risk');
+      if(risk&&/بانتظار|الفحص/.test(risk.textContent||''))risk.textContent='متصل وجاهز للتدقيق';
+      const summary=document.getElementById('summaryLine');
+      if(summary&&/لا توجد بيانات|بانتظار/.test(summary.textContent||''))summary.textContent='الاتصال جاهز — اضغط تشغيل التدقيق لجلب النتائج';
+      const source=document.getElementById('sourceText');if(source&&(source.textContent||'').trim()==='—')source.textContent='Odoo Live';
+    };
+
+    const syncIdentityOnce=async()=>{
+      if(!fromOdoo)return;
+      const key='ndr-odoo-identity-v4';
+      if(localStorage.getItem(key)==='1')return;
+      try{
+        await post(CONNECTOR,{action:'install_app',launchToken:token});
+        localStorage.setItem(key,'1');
+      }catch(e){console.warn('NDR Odoo identity sync:',e);}
+    };
+
     const enableVaultMode=()=>{
       if(window.__ndrVaultFetchEnabled)return;
       window.__ndrVaultFetchEnabled=true;
@@ -90,10 +111,11 @@
         if(key){key.value='';key.disabled=false;key.placeholder='الاتصال محفوظ ومشفر — أدخل مفتاحا جديدا فقط عند التغيير';}
         const secret=document.getElementById('secretState');if(secret){secret.textContent='الاتصال محفوظ ومشفر';secret.classList.remove('empty');}
         try{updateConnectionUi();}catch{}
-        const mode=document.getElementById('modeText');if(mode)mode.textContent='Odoo Connected';
+        markReady();
         addOdooChrome();
         window.NDROdooVault={token,connectorInfo,active:true};
         if(fromOdoo)document.title='NDR HR Intelligence — Odoo';
+        syncIdentityOnce();
       }catch(e){
         console.error('NDR Odoo Mode:',e);
         if(fromOdoo)addOdooChrome();
