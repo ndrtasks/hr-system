@@ -16,6 +16,7 @@ const dock=read('qa-dock-fix.css');
 const guard=read('qa-dock-guard.js');
 const hardening=read('qa-runtime-hardening.js');
 const polish=read('neon-space-premium-polish.css');
+const odooMode=read('odoo-mode.js');
 
 ok(index.includes('qa-dock-fix.css'),'QA dock stylesheet is loaded last');
 ok(index.includes('qa-dock-guard.js'),'QA dock guard is loaded');
@@ -44,11 +45,15 @@ ok(dock.includes('#findingsPage>.pagehero>div:first-child'),'Duplicate findings 
 ok(dock.includes('#rulesPage>.pagehero>div:first-child'),'Duplicate rules page heading is suppressed');
 ok(dock.includes('#integrationPage>.pagehero>div:first-child'),'Duplicate Odoo page heading is suppressed');
 ok(dock.includes('.att-modal{border:1px solid #16506d!important'),'Attendance edit modal is forced into the neon theme');
+ok(dock.includes('backdrop-filter:none!important'),'Heavy modal backdrop blur is disabled');
+ok(dock.includes('font-family:"Segoe UI",Tahoma,Arial,sans-serif!important'),'Bulk attendance uses the same readable UI font');
 ok(polish.includes('#integrationPage .connectfield input'),'Odoo inputs have explicit dark theme styling');
 ok(polish.includes('#attendancePage .att-table tbody td'),'Attendance rows have explicit dark theme styling');
 
 ok(!guard.includes('attributes:true'),'Dock MutationObserver does not watch its own style/class writes');
 ok(guard.includes("mo.observe(root,{subtree:true,childList:true})"),'Dock guard only observes child-list mutations');
+ok(!odooMode.includes("action:'install_app'"),'Opening NDR from Odoo never silently writes/updates the Odoo app');
+ok(odooMode.includes("action:'probe'"),'Opening NDR from Odoo performs a read-only connection probe');
 
 const jsFiles=[
   'loader.js','app1.js','app23.js','ux-fixes.js','workflow-polish.js','navigation-fix.js','odoo-mode.js','connection-manager.js','odoo-delete.js',
