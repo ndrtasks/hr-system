@@ -1,0 +1,36 @@
+/* NDR typography pass — clearer Arabic rendering, closer to Odoo UI */
+:root{
+  --ndr-font: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,"Noto Sans Arabic",sans-serif;
+}
+html,body,#ndr-root{
+  font-family:var(--ndr-font)!important;
+  font-synthesis:none;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+body,h1,h2,h3,h4,h5,h6,p,small,span,b,strong,a,button,input,select,textarea,label,td,th{
+  font-family:var(--ndr-font)!important;
+  letter-spacing:0!important;
+}
+body{font-weight:400!important}
+p,small,.crumb,.titlebox p,.sectionhead p,.findingdesc,.findingmeta,.caseid,.coveragebox span,.pulsecard small,.workspace small,.sidefooter p{font-weight:400!important}
+button,input,select,textarea,.statuspill,.ghost,.sectionaction,.sourcebtn,.att-btn,.filter,.chip,.trendbadge{font-weight:500!important}
+.nav button,.workspace b,.sidefooter strong,.employeejump,.openbtn,.findingmeta .chip,.findingmeta .confidence{font-weight:600!important}
+h1,h2,h3,h4,h5,h6,.titlebox h1,.sectionhead h3,.pagehero h2,.finding h4,.casegroup h4,.rulecontrol h4,.executive h2,.att-head h2,.att-sheet-head b,.metricvalue b,.score,.ringscore b,.coveragebox b,.insightstat b{font-weight:700!important}
+.brandtext strong{font-weight:700!important}
+.titlebox h1{font-size:30px!important;line-height:1.25!important}
+.sectionhead h3,.pagehero h2{line-height:1.35!important}
+.finding h4{font-size:16px!important;line-height:1.55!important}
+.findingdesc{font-size:13.5px!important;line-height:1.8!important;color:#17271d!important}
+.findingmeta{font-size:12px!important;line-height:1.7!important;color:#30443a!important}
+.caseid,.openbtn{font-size:11.5px!important;line-height:1.6!important}
+.nav button{font-size:14px!important;line-height:1.45!important}
+.workspace,.sidefooter,.statuspill,.ghost,.primary,.sectionaction{line-height:1.45!important}
+.metricvalue b{font-weight:700!important}
+.att-table thead th{font-weight:600!important}
+.att-table tbody td{font-weight:400!important}
+.att-table td.emp{font-weight:600!important}
+input,select,textarea{font-weight:400!important}
+/* Avoid faux-heavy rendering that looked blurry at Windows scaling */
+[style*="font-weight:900"],[style*="font-weight: 900"]{font-weight:700!important}
