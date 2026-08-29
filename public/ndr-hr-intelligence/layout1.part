@@ -1,37 +1,73 @@
-
-<div class="aurora"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div><div class="noise"></div>
-<section id="loginView" class="loginwrap hidden">
-  <div class="card login">
-    <div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>HR INTELLIGENCE CONTROL CENTER</small></div></div>
-    <h2>دخول مركز الرقابة</h2><p>وصول مخصص لفريق الموارد البشرية والإدارة المخولة.</p>
-    <input id="password" type="password" autocomplete="current-password" placeholder="كلمة المرور">
-    <div id="loginMsg" class="loginmsg"></div>
-    <button id="loginBtn" class="primary" style="width:100%">دخول آمن</button>
-  </div>
-</section>
+<section id="loginView" class="loginwrap hidden"><div class="login"><div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>HR INTELLIGENCE</small></div></div><input id="password" type="password" autocomplete="current-password"><div id="loginMsg" class="loginmsg"></div><button id="loginBtn" class="primary">دخول</button></div></section>
 <div id="appShell" class="shell hidden">
 <aside class="sidebar">
-  <div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>HR INTELLIGENCE</small></div></div>
+  <div class="brand"><div class="brandgem"><b>NDR</b></div><div class="brandtext"><strong>NDR HR Audit</strong><small>INTELLIGENCE SUITE</small></div></div>
   <div class="workspace"><div><small>مساحة العمل</small><b>المعهد / بيئة الاختبار</b></div><span id="sideStatus" class="liveorb"></span></div>
-  <div class="navlabel">CONTROL CENTER</div>
+  <div class="navlabel">WORKSPACE</div>
   <nav class="nav">
-    <button class="active" data-page="overview"><span class="navicon">◈</span><span class="navtext">مركز الرقابة</span></button>
-    <button data-page="findingsPage"><span class="navicon">⌁</span><span class="navtext">الحالات والمخاطر</span></button>
-    <button data-page="rulesPage"><span class="navicon">⬡</span><span class="navtext">محرك القواعد</span></button>
-    <button data-page="integrationPage"><span class="navicon">⇄</span><span class="navtext">ربط Odoo</span></button>
+    <button class="active" data-page="overview"><span class="navicon">◈</span><span class="navtext">الرئيسية</span></button>
+    <button data-page="findingsPage"><span class="navicon">⌁</span><span class="navtext">الحالات</span></button>
+    <button data-page="rulesPage"><span class="navicon">⬡</span><span class="navtext">القواعد</span></button>
+    <button data-page="integrationPage"><span class="navicon">⇄</span><span class="navtext">Odoo</span></button>
   </nav>
-  <div class="sidefooter"><span class="mini">الاشتراك</span><strong>NDR Professional</strong><p>الخطة التجريبية مفعلة على مساحة العمل الحالية.</p><div class="privacyline"><span class="lockshape">●</span><span>الحالة: فعالة</span></div></div>
+  <div class="sidefooter"><span class="mini">NDR PLAN</span><strong>Professional</strong><div class="privacyline"><span class="lockshape">●</span><span>فعالة</span></div></div>
 </aside>
 <main class="main">
-  <header class="topbar">
-    <div class="titlebox"><div class="crumb">NDR / HR AUDIT / <span id="crumbTitle">OVERVIEW</span></div><h1 id="pageTitle">مركز الرقابة</h1><p id="generated">بانتظار أول تدقيق</p></div>
-    <div class="topactions"><span class="statuspill"><i id="statusDot" class="statusdot"></i><span id="modeText">فحص الاتصال</span></span><button id="refreshBtn" class="ghost">↻ تحديث</button><button id="runBtn" class="primary"><span>تشغيل التدقيق</span><b>↗</b></button></div>
-  </header>
-  <div class="content">
-    <section id="overview" class="panelpage active">
-      <div class="dashboardHero">
-        <div class="card healthcard hover">
-          <div class="scoreblock"><div class="sectioneyebrow"><i></i>HR HEALTH INDEX</div><div class="scoremain"><div id="score" class="score">--</div><div class="scorecopy"><strong id="risk">بانتظار الفحص</strong><span>مؤشر مركب حسب عدد وشدة الملاحظات</span></div></div><div class="healthmeter"><span id="scoreBar"></span></div><div class="healthfoot"><span id="summaryLine">لا توجد بيانات بعد</span><span id="sourceText">—</span></div></div>
-          <div class="healthviz"><div class="rings"><div class="riskorbit"></div><div class="ringscore"><b id="ringTotal">0</b><span>حالة تحتاج مراجعة</span></div><i class="orbitdot"></i><div class="orbitlabels"><span class="l1">عقود</span><span class="l2">حضور</span><span class="l3">إجازات</span></div></div></div>
-        </div>
-    
+<header class="topbar">
+  <div class="titlebox"><div class="crumb">NDR / <span id="crumbTitle">OVERVIEW</span></div><h1 id="pageTitle">مركز الرقابة</h1><p id="generated">بانتظار أول تدقيق</p></div>
+  <div class="topactions"><span class="statuspill"><i id="statusDot" class="statusdot"></i><span id="modeText">فحص الاتصال</span></span><button id="refreshBtn" class="ghost">↻</button><button id="runBtn" class="primary"><span>فحص الآن</span><b>↗</b></button></div>
+</header>
+<div class="content">
+<section id="overview" class="panelpage active">
+  <div class="px-stage">
+    <div class="px-index">
+      <div class="px-kicker"><span></span>NDR HEALTH INDEX</div>
+      <div class="px-index-main"><div id="score" class="px-score">--</div><div class="px-index-copy"><strong id="risk">بانتظار الفحص</strong><small id="summaryLine">لا توجد بيانات بعد</small></div></div>
+      <div class="healthmeter"><span id="scoreBar"></span></div>
+      <div class="px-index-foot"><span id="sourceText">—</span><span><b id="ringTotal">0</b> حالة مفتوحة</span></div>
+      <div class="px-severity-track">
+        <div class="sev critical"><span>حرجة</span><b id="critical">0</b></div>
+        <div class="sev high"><span>عالية</span><b id="high">0</b></div>
+        <div class="sev medium"><span>متوسطة</span><b id="medium">0</b></div>
+        <div class="sev total"><span>الإجمالي</span><b id="total">0</b></div>
+      </div>
+    </div>
+    <div class="px-decisions">
+      <div class="px-decision-head"><span>EXECUTIVE FOCUS</span><b id="execStamp">NDR Intelligence</b></div>
+      <h2 id="briefHeadline">شغّل التدقيق لرؤية الأولويات</h2>
+      <p id="briefMessage"></p>
+      <div id="priorities" class="decisionlist"><div class="decision"><span class="decisionrank">01</span><div><b>بانتظار التدقيق</b></div><span class="arrow">←</span></div></div>
+    </div>
+    <div class="px-stage-art" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+  </div>
+
+  <div class="px-delta">
+    <div><span>جديد</span><b id="newCases">0</b></div>
+    <div><span>متكرر</span><b id="repeatCases">0</b></div>
+    <div><span>اختفى</span><b id="clearedCases">0</b></div>
+    <div><span>موظفون متأثرون</span><b id="affectedEmployees">0</b></div>
+  </div>
+
+  <div class="px-workbench">
+    <section class="px-queue">
+      <div class="px-section-title"><div><span>PRIORITY QUEUE</span><h3>الحالات المفتوحة</h3></div><button class="sectionaction" data-jump="findingsPage">كل الحالات ←</button></div>
+      <div id="topFindings" class="findingsstream"><div class="empty">شغّل التدقيق لعرض الحالات.</div></div>
+    </section>
+    <aside class="px-side-instruments">
+      <section class="px-instrument risk">
+        <div class="px-instrument-title"><span>RISK MIX</span><b>توزيع المخاطر</b></div>
+        <div class="riskcontent"><div id="riskDonut" class="donut"><div class="donutcenter"><b id="donutTotal">0</b><span>إجمالي</span></div></div><div class="legend"><div class="legendrow"><i class="legenddot" style="background:var(--red)"></i><span>حرجة</span><b id="legendCritical">0</b></div><div class="legendrow"><i class="legenddot" style="background:var(--amber)"></i><span>عالية</span><b id="legendHigh">0</b></div><div class="legendrow"><i class="legenddot" style="background:var(--blue)"></i><span>متوسطة</span><b id="legendMedium">0</b></div></div></div>
+      </section>
+      <section class="px-instrument coverage">
+        <div class="px-instrument-title"><span>AUDIT SCOPE</span><b>نطاق الفحص</b></div>
+        <div class="coveragegrid"><div class="coveragebox"><b id="covEmployees">0</b><span>موظف</span></div><div class="coveragebox"><b id="covContracts">0</b><span>عقد</span></div><div class="coveragebox"><b id="covAttendance">0</b><span>حضور</span></div><div class="coveragebox"><b id="covLeaves">0</b><span>إجازة</span></div></div>
+      </section>
+      <section class="px-instrument live">
+        <div class="px-instrument-title"><span>LIVE FEED</span><b>آخر التغييرات</b></div>
+        <div id="activity" class="activity"><div class="empty">لا يوجد نشاط بعد.</div></div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="px-command-line"><div class="px-command-copy"><span>MANAGEMENT VIEW</span><b id="managementLine">—</b></div><div><b id="resolvedRate">0%</b><span>معالج</span></div><div><b id="ruleCount">0</b><span>قاعدة</span></div><div><b id="dataPoints">0</b><span>نقطة بيانات</span></div></div>
+</section>
