@@ -2,10 +2,47 @@
 #integrationPage>.pagehero{display:none!important}
 #integrationPage .liveconnect{margin-top:0!important}
 
+/* Attendance failures belong to the same dark command language, not the legacy pale alert. */
+#attendancePage .att-error.show{
+  display:flex!important;align-items:center!important;min-height:42px!important;margin:10px 0!important;padding:10px 13px!important;
+  border:1px solid rgba(255,82,82,.36)!important;border-radius:10px!important;
+  background:linear-gradient(90deg,rgba(125,27,38,.24),rgba(46,13,23,.30))!important;
+  color:#ffb5bd!important;box-shadow:inset 3px 0 0 #ff626f!important;font-size:10px!important
+}
+
 /* Keep the command dock clear of safe-area/home indicators on compact screens. */
 @supports(padding:max(0px)){
   @media(max-width:760px){
     .sidebar{bottom:max(8px,env(safe-area-inset-bottom))!important}
     .main{padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
   }
+}
+
+/* Compact devices: every command remains visible, named and tappable without sideways scrolling. */
+@media(max-width:760px){
+  .topbar{
+    height:auto!important;min-height:0!important;padding:12px 2px 11px!important;gap:10px!important;
+    align-items:stretch!important;flex-direction:column!important;overflow:visible!important
+  }
+  .titlebox{width:100%!important;min-width:0!important}
+  .titlebox h1{font-size:22px!important}.titlebox p{font-size:9px!important;margin-top:4px!important}
+  .topactions{width:100%!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important;flex-wrap:wrap!important;overflow:visible!important}
+  .topactions .statuspill,.topactions .ghost,.topactions .primary,.topactions .ndr-notify-btn{min-height:34px!important;height:34px!important;padding:0 9px!important;font-size:9px!important}
+
+  .sidebar{height:68px!important;min-height:68px!important;padding:7px!important;gap:4px!important;overflow:hidden!important}
+  .sidebar>.brand{flex:0 0 42px!important;width:42px!important;min-width:42px!important;height:50px!important}
+  .sidebar>.brand .brandgem{width:34px!important;height:34px!important}
+  .sidebar>.nav{height:52px!important;min-height:52px!important;display:flex!important;justify-content:stretch!important;gap:2px!important;overflow:hidden!important}
+  .sidebar>.nav>button[data-page]{
+    flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:50px!important;min-height:50px!important;
+    padding:3px 1px!important;gap:1px!important;flex-direction:column!important;overflow:hidden!important;border-radius:10px!important;font-size:8px!important
+  }
+  .sidebar>.nav>button[data-page] .navicon{width:25px!important;height:25px!important;min-width:25px!important;font-size:10px!important}
+  .sidebar>.nav>button[data-page] .navtext{display:none!important}
+  .sidebar>.nav>button[data-page]::after{display:block!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:inherit!important;font-size:7.5px!important;line-height:1.1!important;font-weight:650!important}
+  .sidebar>.nav>button[data-page="overview"]::after{content:"الرئيسية"}
+  .sidebar>.nav>button[data-page="findingsPage"]::after{content:"الحالات"}
+  .sidebar>.nav>button[data-page="rulesPage"]::after{content:"القواعد"}
+  .sidebar>.nav>button[data-page="attendancePage"]::after{content:"الحضور"}
+  .sidebar>.nav>button[data-page="integrationPage"]::after{content:"Odoo"}
 }
