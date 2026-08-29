@@ -67,6 +67,11 @@ await clickPage('attendancePage','الحضور والانصراف');
 // The QA browser intentionally has no saved Odoo token. This checks navigation/render responsiveness without writing data.
 await page.waitForTimeout(500);
 ok(await page.locator('#attendancePage').isVisible(),'Attendance workspace remains responsive after opening');
+const attError=page.locator('#attError');
+if(await attError.isVisible()){
+  const attErrorBg=await attError.evaluate(el=>getComputedStyle(el).backgroundColor);
+  ok(attErrorBg!=='rgb(246, 225, 227)','Attendance error no longer falls back to the pale legacy alert');
+}
 await page.screenshot({path:`${outDir}/ndr-qa-attendance.png`,fullPage:true});
 await clickPage('integrationPage','Odoo');
 
@@ -95,14 +100,22 @@ await page.locator('.ndr-notify-head button').click();
 await page.waitForTimeout(300);
 ok(!(await drawer.evaluate(el=>el.classList.contains('show'))),'Notification drawer closes cleanly');
 
-// Compact viewport regression: no page-level sideways scroll and the command dock remains usable.
+// Compact viewport regression: every command remains visible without a hidden sideways-scrolling dock.
 await page.setViewportSize({width:390,height:844});
-await page.waitForTimeout(250);
+await page.waitForTimeout(300);
 await clickPage('overview','الرئيسية - جوال');
 ok(await dock.isVisible(),'Bottom dock remains visible on compact viewport');
 await noPageOverflow('الجوال');
 const mobileDockBox=await dock.boundingBox();
 ok(mobileDockBox&&mobileDockBox.y>700,'Mobile dock remains anchored near bottom');
+const mobileButtons=await buttons.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return{page:el.dataset.page,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,visible:getComputedStyle(el).display!=='none'&&r.width>0&&r.height>0}}));
+for(const b of mobileButtons)ok(b.visible&&b.left>=0&&b.right<=390&&b.width>=45,`Mobile command ${b.page} is fully visible (${Math.round(b.width)}px)`);
+const mobileLabels=await buttons.evaluateAll(els=>els.map(el=>({page:el.dataset.page,label:getComputedStyle(el,'::after').content})));
+for(const x of mobileLabels)ok(x.label&&x.label!=='none'&&x.label!=='normal'&&x.label!=='""',`Mobile command ${x.page} keeps a visible label`);
+const topbar=page.locator('.topbar'),topbarBox=await topbar.boundingBox();
+ok(topbarBox&&topbarBox.height>=100,'Mobile topbar expands to contain its controls');
+const mobileActions=await page.locator('.topactions > *').evaluateAll(els=>els.filter(el=>getComputedStyle(el).display!=='none').map(el=>{const r=el.getBoundingClientRect();return{tag:el.id||el.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom}}));
+for(const a of mobileActions)ok(a.left>=0&&a.right<=390&&a.top>=0&&a.bottom<=(topbarBox?.bottom||844)+1,`Mobile header action ${a.tag} is fully visible`);
 await page.screenshot({path:`${outDir}/ndr-qa-mobile.png`,fullPage:true});
 
 // Ignore expected connection/auth messages because this browser run deliberately carries no Odoo connector token.
@@ -110,6 +123,6 @@ ok(pageErrors.length===0,`No uncaught page errors (${pageErrors.length})`);
 const seriousConsole=consoleErrors.filter(x=>!/Odoo|اتصال|401|403|attendance/i.test(x));
 ok(seriousConsole.length===0,`No unexpected console errors (${seriousConsole.length})`);
 
-fs.writeFileSync(`${outDir}/browser-report.json`,JSON.stringify({base,readyMs,labels,inputBg,drawerBg,dockZ,drawerZ,pageErrors,consoleErrors},null,2));
+fs.writeFileSync(`${outDir}/browser-report.json`,JSON.stringify({base,readyMs,labels,inputBg,drawerBg,dockZ,drawerZ,mobileButtons,mobileLabels,mobileActions,pageErrors,consoleErrors},null,2));
 await browser.close();
 console.log('NDR browser QA: PASS');
