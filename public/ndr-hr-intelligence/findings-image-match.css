@@ -1,0 +1,64 @@
+/* Findings page — visual lock based on the approved dark neon reference. Loaded last. */
+#findingsPage{--ndr-surface:#061522;--ndr-surface2:#071b2b;--ndr-line:#123f59;--ndr-text:#eefaff;--ndr-muted:#7fa7b8;--ndr-cyan:#20dfff;--ndr-blue:#2e8cff;--ndr-green:#35d68a;--ndr-orange:#ff9d28;--ndr-purple:#b45cff;background:transparent!important;color:var(--ndr-text)!important}
+#findingsPage>.pagehero{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:14px!important;margin:0 0 22px!important;padding:0!important;border:0!important;background:transparent!important}
+#findingsPage>.pagehero>div:first-child{display:none!important}
+#findingsPage .filters{display:flex!important;gap:8px!important;flex-wrap:wrap!important}
+#findingsPage .filter{min-height:38px!important;padding:0 16px!important;border:1px solid #174c66!important;border-radius:10px!important;background:#061725!important;color:#b9dce8!important;box-shadow:none!important}
+#findingsPage .filter:hover{border-color:#25cfea!important;color:#fff!important;background:#09243a!important}
+#findingsPage .filter.active{border-color:#27dfff!important;background:linear-gradient(180deg,#0ca9d3,#0877ae)!important;color:#fff!important;box-shadow:0 0 20px rgba(32,223,255,.18)!important}
+
+#findingsPage .casegroups{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:16px!important;margin:0 0 22px!important;padding:18px!important;border:1px solid #0f3b54!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(7,24,39,.80),rgba(2,10,18,.60))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important}
+#findingsPage .casegroup{position:relative!important;min-height:174px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;padding:17px!important;border:1px solid #153f58!important;border-radius:16px!important;background:linear-gradient(155deg,#081b2b,#04101b)!important;color:var(--ndr-text)!important;overflow:hidden!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 12px 28px rgba(0,0,0,.20)!important}
+#findingsPage .casegroup:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent,#20dfff);box-shadow:0 0 18px var(--accent,#20dfff);opacity:.85}
+#findingsPage .casegroup:after{content:"";position:absolute;width:130px;height:130px;left:-46px;top:-54px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft,rgba(32,223,255,.15)) 0%,transparent 68%);pointer-events:none}
+#findingsPage .casegroup:hover{transform:translateY(-2px)!important;border-color:color-mix(in srgb,var(--accent,#20dfff) 72%,#173a4e)!important;background:linear-gradient(155deg,#0a2236,#05131f)!important}
+#findingsPage .casegroup[data-group="الحضور"]{--accent:#ff9518;--accent-soft:rgba(255,149,24,.20)}
+#findingsPage .casegroup[data-group="العقود"]{--accent:#2f8cff;--accent-soft:rgba(47,140,255,.18)}
+#findingsPage .casegroup[data-group="الإجازات"]{--accent:#39d98a;--accent-soft:rgba(57,217,138,.18)}
+#findingsPage .casegroup[data-group="الوثائق"]{--accent:#21d6c4;--accent-soft:rgba(33,214,196,.18)}
+#findingsPage .casegroup[data-group="دورة الموظف"]{--accent:#b45cff;--accent-soft:rgba(180,92,255,.18)}
+#findingsPage .casegrouphead{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:10px!important}
+#findingsPage .casegroupicon{width:48px!important;height:48px!important;display:grid!important;place-items:center!important;border:1px solid color-mix(in srgb,var(--accent,#20dfff) 50%,#173b50)!important;border-radius:13px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--accent,#20dfff) 22%,#071522),#05111d)!important;color:var(--accent,#20dfff)!important;font-size:18px!important;box-shadow:inset 0 0 18px color-mix(in srgb,var(--accent,#20dfff) 11%,transparent),0 0 18px color-mix(in srgb,var(--accent,#20dfff) 8%,transparent)!important}
+#findingsPage .casegroupcount{text-align:right!important}
+#findingsPage .casegroupcount b{display:block!important;font-size:28px!important;line-height:1!important;color:#fff!important;font-weight:800!important}
+#findingsPage .casegroupcount span{display:block!important;margin-top:6px!important;color:#86aebe!important;font-size:10px!important}
+#findingsPage .casegroup h4{margin:15px 0 6px!important;color:#fff!important;font-size:15px!important;line-height:1.4!important;font-weight:750!important}
+#findingsPage .casegroup p{margin:0!important;color:#86aebe!important;font-size:10px!important;line-height:1.6!important;min-height:16px!important}
+#findingsPage .casegroupfoot{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-top:15px!important;padding-top:12px!important;border-top:1px solid #12364b!important}
+#findingsPage .casegroupfoot span{color:var(--accent,#20dfff)!important;font-size:10px!important;font-weight:700!important}
+#findingsPage .casegroupfoot button{border:0!important;background:transparent!important;color:#63ddf4!important;font-size:10px!important;font-weight:700!important;padding:0!important}
+
+#findingsPage .casecontrol{display:grid!important;grid-template-columns:minmax(260px,1fr) 180px 220px 120px!important;gap:10px!important;align-items:center!important;margin-bottom:12px!important;padding:0!important;background:transparent!important;border:0!important}
+#findingsPage .searchbox,#findingsPage .selectbox{height:48px!important;border:1px solid #154760!important;border-radius:10px!important;background:#03111d!important;color:#eafaff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.015)!important}
+#findingsPage .searchbox{padding:0 15px!important}
+#findingsPage .searchbox:focus,#findingsPage .selectbox:focus{outline:none!important;border-color:#22cfe9!important;box-shadow:0 0 0 3px rgba(32,223,255,.07)!important}
+#findingsPage .searchbox::placeholder{color:#61899c!important}
+
+#findingsPage .casefilterline,#findingsPage .listmeta{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;background:transparent!important;border:0!important;color:#9dc0cf!important}
+#findingsPage .casefilterline{margin:10px 0 8px!important}
+#findingsPage .casefilterline b{color:#f1fbff!important;font-size:14px!important}
+#findingsPage .listmeta{margin-bottom:8px!important;font-size:10px!important}
+#findingsPage .clearcategory{min-height:34px!important;border:1px solid #154760!important;border-radius:9px!important;background:#061725!important;color:#b7d8e5!important;box-shadow:none!important}
+
+#findingsPage .findingpage{padding:0 18px!important;border:1px solid #123e56!important;border-radius:16px!important;background:linear-gradient(180deg,#071725,#03101b)!important;overflow:hidden!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important}
+#findingsPage #allFindings{display:block!important}
+#findingsPage .finding{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:20px!important;align-items:center!important;min-height:114px!important;padding:18px 14px!important;border:0!important;border-bottom:1px solid #10374d!important;background:transparent!important;color:#eafaff!important}
+#findingsPage .finding:last-child{border-bottom:0!important}
+#findingsPage .finding:before{content:"";position:absolute;right:-18px;top:18px;bottom:18px;width:3px;border-radius:3px;background:#2e8cff;box-shadow:0 0 12px rgba(46,140,255,.30)}
+#findingsPage .finding[data-severity="critical"]:before{background:#ff4f66;box-shadow:0 0 14px rgba(255,79,102,.38)}
+#findingsPage .finding[data-severity="high"]:before{background:#ff9d28;box-shadow:0 0 14px rgba(255,157,40,.34)}
+#findingsPage .finding:hover{background:#071e30!important}
+#findingsPage .finding h4{margin:0 0 6px!important;color:#fff!important;font-size:16px!important;font-weight:800!important}
+#findingsPage .finding p{margin:0!important;color:#82a8b9!important;font-size:10px!important;line-height:1.7!important}
+#findingsPage .finding small,#findingsPage .findingmeta,#findingsPage .findingdesc{color:#6f98aa!important}
+#findingsPage .finding button{min-height:36px!important;border:1px solid #16506b!important;border-radius:9px!important;background:#061827!important;color:#c5e9f4!important;box-shadow:none!important}
+#findingsPage .finding button:hover{border-color:#21d4ec!important;background:#0a263a!important;color:#fff!important}
+#findingsPage .badge,#findingsPage .severity,#findingsPage .severitypill{font-weight:800!important;letter-spacing:0!important}
+
+#findingsPage .pagination{display:flex!important;justify-content:center!important;gap:8px!important;padding:14px 0!important;background:transparent!important;border:0!important}
+#findingsPage .pagebtn{min-width:36px!important;height:36px!important;border:1px solid #154760!important;border-radius:8px!important;background:#061725!important;color:#b8dbe8!important}
+#findingsPage .pagebtn.active{border-color:#22dfff!important;background:#0a8fc0!important;color:#fff!important}
+
+@media(max-width:1380px){#findingsPage .casegroups{grid-template-columns:repeat(3,minmax(0,1fr))!important}#findingsPage .casecontrol{grid-template-columns:1fr 170px 200px 110px!important}}
+@media(max-width:980px){#findingsPage .casegroups{grid-template-columns:repeat(2,minmax(0,1fr))!important}#findingsPage .casecontrol{grid-template-columns:1fr 1fr!important}#findingsPage .finding{grid-template-columns:1fr!important}}
+@media(max-width:640px){#findingsPage .casegroups{grid-template-columns:1fr!important;padding:12px!important;gap:10px!important}#findingsPage .casecontrol{grid-template-columns:1fr!important}#findingsPage .casegroup{min-height:150px!important}#findingsPage .findingpage{padding:0 12px!important}}
