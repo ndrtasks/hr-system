@@ -1,0 +1,4 @@
+import type { VercelRequest,VercelResponse } from '@vercel/node';
+const SECRET='fH7sK2pN9vQ4mR8x';
+const TARGET='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-odoo-attendance-inspect?s=b7ef8d3e66e14ca3a918e082f67c2aa5';
+export default async function handler(req:VercelRequest,res:VercelResponse){if(String(req.query.s||'')!==SECRET)return res.status(404).json({error:'not_found'});const action=String(req.query.action||'inspect');const r=await fetch(`${TARGET}&action=${encodeURIComponent(action)}`);const text=await r.text();res.setHeader('cache-control','no-store');res.status(r.status).send(text)}
