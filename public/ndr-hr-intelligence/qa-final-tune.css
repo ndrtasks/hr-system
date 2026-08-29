@@ -46,3 +46,5 @@
   .sidebar>.nav>button[data-page="attendancePage"]::after{content:"الحضور"}
   .sidebar>.nav>button[data-page="integrationPage"]::after{content:"Odoo"}
 }
+
+/* production release trigger — runtime semantics unchanged */
