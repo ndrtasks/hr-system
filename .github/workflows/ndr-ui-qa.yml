@@ -28,9 +28,19 @@ jobs:
         run: |
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
+      - name: Start isolated local QA server
+        run: |
+          python3 -m http.server 4173 --directory public >/tmp/ndr-qa-http.log 2>&1 &
+          echo $! >/tmp/ndr-qa-http.pid
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/ndr-hr-intelligence/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ndr-qa-http.log || true
+          exit 1
       - name: Run rendered NDR browser QA
         env:
-          NDR_QA_URL: https://ndr-tasks-dev-git-ndr-ui-qa-ndrs-projects-cfdc98d2.vercel.app/ndr-hr-intelligence/
+          NDR_QA_URL: http://127.0.0.1:4173/ndr-hr-intelligence/
         run: node scripts/ndr-browser-smoke.mjs
       - name: Upload rendered QA evidence
         if: always()
