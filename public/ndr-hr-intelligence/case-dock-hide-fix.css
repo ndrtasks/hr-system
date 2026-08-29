@@ -1,2 +1,25 @@
 /* Full case view owns the viewport; the command dock must not remain behind it. */
 body:has(.modalback.show) .sidebar{display:none!important}
+
+/* No pale/white action controls inside the dark case page. */
+.caseworkspace .assignbtn,
+.caseworkspace .notebtn,
+.caseworkspace .later,
+.caseworkspace #cancelException{
+  min-height:44px!important;
+  border:1px solid #16506b!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#071b2b,#051522)!important;
+  color:#c8e9f5!important;
+  box-shadow:none!important;
+}
+.caseworkspace .assignbtn:hover,
+.caseworkspace .notebtn:hover,
+.caseworkspace .later:hover,
+.caseworkspace #cancelException:hover{
+  background:#0a293f!important;
+  border-color:#22cde9!important;
+  color:#fff!important;
+}
+.caseworkspace .leftactions,.caseworkspace .rightactions{display:flex!important;gap:8px!important;flex-wrap:wrap!important}
+.caseworkspace .casefooter{gap:14px!important}
