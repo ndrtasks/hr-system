@@ -13,12 +13,15 @@ const layout1=read('layout1.part');
 const att=read('attendance-v2.js');
 const auto=read('auto-sync.js');
 const dock=read('qa-dock-fix.css');
+const overlay=read('qa-overlay-order.css');
 const guard=read('qa-dock-guard.js');
 const hardening=read('qa-runtime-hardening.js');
 const polish=read('neon-space-premium-polish.css');
 const odooMode=read('odoo-mode.js');
 
-ok(index.includes('qa-dock-fix.css'),'QA dock stylesheet is loaded last');
+ok(index.includes('qa-dock-fix.css'),'QA dock stylesheet is loaded');
+ok(index.includes('qa-overlay-order.css'),'QA overlay order stylesheet is loaded last');
+ok(index.indexOf('qa-overlay-order.css')>index.indexOf('qa-dock-fix.css'),'Overlay order loads after dock styling');
 ok(index.includes('qa-dock-guard.js'),'QA dock guard is loaded');
 ok(index.includes('qa-runtime-hardening.js'),'QA runtime hardening is loaded');
 ok(loader.includes("'/ndr-hr-intelligence/attendance-v2.js'"),'Attendance v2 is the active attendance client');
@@ -47,11 +50,16 @@ ok(dock.includes('#integrationPage>.pagehero>div:first-child'),'Duplicate Odoo p
 ok(dock.includes('.att-modal{border:1px solid #16506d!important'),'Attendance edit modal is forced into the neon theme');
 ok(dock.includes('backdrop-filter:none!important'),'Heavy modal backdrop blur is disabled');
 ok(dock.includes('font-family:"Segoe UI",Tahoma,Arial,sans-serif!important'),'Bulk attendance uses the same readable UI font');
+ok(dock.includes('.ndr-notify-drawer{z-index:1500!important'),'Notification drawer is dark-themed and layered above dock');
+ok(dock.includes('.ndr-live-pop{background:linear-gradient'),'Live notification popups use the dark neon theme');
+ok(overlay.includes('z-index:1350!important'),'Case and attendance overlays stay above bottom navigation');
+ok(overlay.includes('bottom:104px!important'),'Generic toast does not collide with the bottom dock');
 ok(polish.includes('#integrationPage .connectfield input'),'Odoo inputs have explicit dark theme styling');
 ok(polish.includes('#attendancePage .att-table tbody td'),'Attendance rows have explicit dark theme styling');
 
 ok(!guard.includes('attributes:true'),'Dock MutationObserver does not watch its own style/class writes');
 ok(guard.includes("mo.observe(root,{subtree:true,childList:true})"),'Dock guard only observes child-list mutations');
+ok(guard.includes("if(typeof b.onclick==='function')return"),'Dock fallback does not duplicate normal navigation handlers');
 ok(!odooMode.includes("action:'install_app'"),'Opening NDR from Odoo never silently writes/updates the Odoo app');
 ok(odooMode.includes("action:'probe'"),'Opening NDR from Odoo performs a read-only connection probe');
 
