@@ -1,0 +1,11 @@
+/* Final QA polish: the Odoo page uses the topbar + connector card; the legacy pagehero row is redundant. */
+#integrationPage>.pagehero{display:none!important}
+#integrationPage .liveconnect{margin-top:0!important}
+
+/* Keep the command dock clear of safe-area/home indicators on compact screens. */
+@supports(padding:max(0px)){
+  @media(max-width:760px){
+    .sidebar{bottom:max(8px,env(safe-area-inset-bottom))!important}
+    .main{padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
+  }
+}
