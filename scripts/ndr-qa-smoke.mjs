@@ -15,14 +15,17 @@ const auto=read('auto-sync.js');
 const live=read('live-watch-lite.js');
 const dock=read('qa-dock-fix.css');
 const overlay=read('qa-overlay-order.css');
+const finalTune=read('qa-final-tune.css');
 const guard=read('qa-dock-guard.js');
 const hardening=read('qa-runtime-hardening.js');
 const polish=read('neon-space-premium-polish.css');
 const odooMode=read('odoo-mode.js');
 
 ok(index.includes('qa-dock-fix.css'),'QA dock stylesheet is loaded');
-ok(index.includes('qa-overlay-order.css'),'QA overlay order stylesheet is loaded last');
+ok(index.includes('qa-overlay-order.css'),'QA overlay order stylesheet is loaded');
+ok(index.includes('qa-final-tune.css'),'Final QA polish stylesheet is loaded last');
 ok(index.indexOf('qa-overlay-order.css')>index.indexOf('qa-dock-fix.css'),'Overlay order loads after dock styling');
+ok(index.indexOf('qa-final-tune.css')>index.indexOf('qa-overlay-order.css'),'Final polish loads after overlay rules');
 ok(index.includes('qa-dock-guard.js'),'QA dock guard is loaded');
 ok(index.includes('qa-runtime-hardening.js'),'QA runtime hardening is loaded');
 ok(loader.includes("Promise.all(urls.map"),'Layout fragments are fetched in parallel');
@@ -53,7 +56,6 @@ ok(dock.includes('bottom:16px!important'),'Navigation is explicitly anchored as 
 ok(dock.includes('.sidebar>.nav>button[data-page]'),'Dock buttons have an explicit visibility rule');
 ok(dock.includes('#findingsPage>.pagehero>div:first-child'),'Duplicate findings page heading is suppressed');
 ok(dock.includes('#rulesPage>.pagehero>div:first-child'),'Duplicate rules page heading is suppressed');
-ok(dock.includes('#integrationPage>.pagehero>div:first-child'),'Duplicate Odoo page heading is suppressed');
 ok(dock.includes('.att-modal{border:1px solid #16506d!important'),'Attendance edit modal is forced into the neon theme');
 ok(dock.includes('backdrop-filter:none!important'),'Heavy modal backdrop blur is disabled');
 ok(dock.includes('font-family:"Segoe UI",Tahoma,Arial,sans-serif!important'),'Bulk attendance uses the same readable UI font');
@@ -61,6 +63,8 @@ ok(dock.includes('.ndr-notify-drawer{z-index:1500!important'),'Notification draw
 ok(dock.includes('.ndr-live-pop{background:linear-gradient'),'Live notification popups use the dark neon theme');
 ok(overlay.includes('z-index:1350!important'),'Case and attendance overlays stay above bottom navigation');
 ok(overlay.includes('bottom:104px!important'),'Generic toast does not collide with the bottom dock');
+ok(finalTune.includes('#integrationPage>.pagehero{display:none!important}'),'Redundant Odoo pagehero/action row is removed');
+ok(finalTune.includes('env(safe-area-inset-bottom)'),'Compact dock respects mobile safe area');
 ok(polish.includes('#integrationPage .connectfield input'),'Odoo inputs have explicit dark theme styling');
 ok(polish.includes('#attendancePage .att-table tbody td'),'Attendance rows have explicit dark theme styling');
 
