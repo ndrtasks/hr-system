@@ -29,7 +29,7 @@ function classification(r){
   try{Object.defineProperty(r,'__ndrClass',{value:x,writable:true,configurable:true})}catch{}
   return x;
 }
-function addCss(){if(document.querySelector('link[data-ndr-attendance]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href='/ndr-hr-intelligence/attendance.css?v=20260829-10';l.dataset.ndrAttendance='1';document.head.appendChild(l)}
+function addCss(){if(document.querySelector('link[data-ndr-attendance]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href='/ndr-hr-intelligence/attendance.css?v=20260830-qa2';l.dataset.ndrAttendance='1';document.head.appendChild(l)}
 function build(){
   if($('attendancePage'))return;
   const nav=document.querySelector('.nav'),integration=nav?.querySelector('[data-page="integrationPage"]');
@@ -42,8 +42,24 @@ function active(){return $('attendancePage')?.classList.contains('active')}
 function setView(on){
   window.__ndrAttendanceActive=!!on;window.dispatchEvent(new CustomEvent('ndr:attendance-view',{detail:{active:!!on}}));
   const page=$('attendancePage'),btn=$('attendanceNavBtn');if(!page||!btn)return;
-  if(on){document.querySelectorAll('.panelpage').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));page.classList.add('active');btn.classList.add('active');if($('pageTitle'))$('pageTitle').textContent='الحضور والانصراف';if($('generated'))$('generated').textContent='استثناءات الحضور والإجازات';if($('runBtn'))$('runBtn').style.display='none';if($('refreshBtn'))$('refreshBtn').style.display='none';requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!loadedMonth)scheduleLoad(false)}));}
-  else{page.classList.remove('active');btn.classList.remove('active');if($('runBtn'))$('runBtn').style.display='';if($('refreshBtn'))$('refreshBtn').style.display='';if(controller){controller.abort();controller=null}}
+  if(on){
+    document.querySelectorAll('.panelpage').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+    page.classList.add('active');btn.classList.add('active');
+    if($('pageTitle'))$('pageTitle').textContent='الحضور والانصراف';
+    if($('crumbTitle'))$('crumbTitle').textContent='ATTENDANCE';
+    if($('generated'))$('generated').textContent='استثناءات الحضور والإجازات';
+    if($('runBtn'))$('runBtn').style.display='none';if($('refreshBtn'))$('refreshBtn').style.display='none';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!loadedMonth)scheduleLoad(false)}));
+  }else{
+    page.classList.remove('active');btn.classList.remove('active');
+    if($('runBtn'))$('runBtn').style.display='';if($('refreshBtn'))$('refreshBtn').style.display='';
+    if(controller){controller.abort();controller=null}
+    if(window.__ndrDeferredAuditRender&&typeof render==='function'){
+      window.__ndrDeferredAuditRender=false;
+      requestAnimationFrame(()=>{try{render()}catch{}});
+    }
+  }
 }
 function setError(t=''){const e=$('attError');if(!e)return;e.textContent=t;e.classList.toggle('show',!!t)}
 function setLoading(){const w=$('attTableWrap');if(w)w.innerHTML='<div class="att-loading">جاري تحميل بيانات الحضور…</div>'}
@@ -76,7 +92,7 @@ function renderTable(){
   const wrap=$('attTableWrap');if(!wrap||!active())return;const mode=$('attMode').value,dep=$('attDepartment').value;if(!filtered.length){const msg=mode==='department'&&!dep?'اختر قسما لعرض السجل الكامل':'لا توجد حالات تحتاج مراجعة';wrap.innerHTML=`<div class="att-empty"><b>${msg}</b></div>`;return}
   const shown=filtered.slice(0,renderLimit),remaining=filtered.length-shown.length;const rows=shown.map((r,i)=>{const c=classification(r),leave=r.leaveType?`${r.leaveType}${r.leaveState?` • ${r.leaveState}`:''}`:'—';return`<tr class="${c.problem?'needs-review':'normal-row'}"><td class="code">${esc(r.employeeCode||r.employeeId)}</td><td class="emp">${esc(r.employeeName)}</td><td><b>${esc(r.date)}</b><small>${esc(r.day||'')}</small></td><td class="punch">${esc(punch(r))}</td><td class="late">${r.lateMinutes?`${esc(r.lateMinutes)} د`:'—'}</td><td class="leavecell">${esc(leave)}</td><td><span class="att-status ${c.cls}">${esc(c.label)}</span></td><td><button class="att-edit" data-edit="${i}" ${(!r.editable||r.status==='مستقبلي')?'disabled':''}>${r.attendanceId?'تعديل':'إضافة'}</button></td></tr>`}).join('');
   wrap.innerHTML=`<table class="att-table"><thead><tr><th>رقم الموظف</th><th>اسم الموظف</th><th>التاريخ</th><th>الحضور والانصراف</th><th>التأخير</th><th>الإجازة</th><th>الحالة</th><th>تعديل</th></tr></thead><tbody>${rows}</tbody></table>${remaining>0?`<div style="padding:12px;text-align:center"><button id="attMore" class="att-btn">عرض ${Math.min(PAGE_ROWS,remaining)} إضافية</button></div>`:''}`;
-  wrap.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(shown[Number(b.dataset.edit)]));$('attMore')?.addEventListener('click',()=>{renderLimit+=PAGE_ROWS;requestAnimationFrame(renderTable)});
+  wrap.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(shown[Number(b.dataset.edit)]));const more=$('attMore');if(more)more.onclick=()=>{renderLimit+=PAGE_ROWS;renderTable()}
 }
 function openEditor(r){if(!r||!r.editable)return;currentEdit=r;$('attEditTitle').textContent=r.attendanceId?'تعديل البصمة':'إضافة بصمة';$('attEditSub').textContent=`${r.employeeCode||r.employeeId} • ${r.employeeName} • ${r.date}`;$('attEditIn').value=r.checkIn||r.expectedIn||'';$('attEditOut').value=r.checkOut||r.expectedOut||'';$('attEditReason').value='';$('attEditNote').textContent=r.leaveType?`يوجد ${r.leaveType} (${r.leaveState||'—'}) في هذا اليوم.`:(r.attendanceId?'سيتم تحديث نفس سجل الحضور في Odoo.':'سيتم إنشاء سجل حضور جديد في Odoo.');$('attEditBack').classList.add('show')}
 function closeEditor(){$('attEditBack').classList.remove('show');currentEdit=null}
@@ -84,7 +100,8 @@ async function saveEditor(){if(!currentEdit)return;const cin=$('attEditIn').valu
 async function exportExcel(){if(!filtered.length)return notify('لا توجد سجلات للتصدير');const b=$('attExport'),month=$('attMonth').value||currentMonth(),rg=rangeForMonth(month),employeeIds=[...new Set(filtered.map(r=>r.employeeId))],visibleKeys=filtered.map(r=>`${r.employeeId}|${r.date}`),displayStatus=Object.fromEntries(filtered.map(r=>[`${r.employeeId}|${r.date}`,classification(r).label]));b.disabled=true;try{const t=token(),r=await fetch(`${API}?action=export`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({launchToken:t,...rg,employeeIds,visibleKeys,displayStatus})});if(!r.ok)throw new Error('تعذر إنشاء Excel');const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`NDR_Attendance_${month}.xlsx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){notify(e.message)}finally{b.disabled=false}}
 function bind(){
   $('attMonth').value=currentMonth();$('attendanceNavBtn').addEventListener('click',()=>setView(true));
-  document.addEventListener('click',e=>{const b=e.target.closest?.('.nav button');if(b&&b.id!=='attendanceNavBtn'&&active())setView(false)});
+  // Capture before app23 showPage removes the attendance .active class; otherwise the global pause flag can stay stuck true.
+  document.addEventListener('click',e=>{const b=e.target.closest?.('.nav button');if(b&&b.id!=='attendanceNavBtn'&&window.__ndrAttendanceActive)setView(false)},true);
   $('attReload').onclick=()=>{const m=$('attMonth').value||currentMonth();clearCache(m);scheduleLoad(true)};$('attMonth').onchange=()=>{register=null;loadedMonth='';scheduleLoad(false)};$('attSearch').oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(applyFilters,120)};$('attDepartment').onchange=applyFilters;$('attMode').onchange=applyFilters;$('attPrint').onclick=()=>window.print();$('attExport').onclick=exportExcel;$('attEditClose').onclick=closeEditor;$('attEditCancel').onclick=closeEditor;$('attEditBack').onclick=e=>{if(e.target===$('attEditBack'))closeEditor()};$('attEditSave').onclick=saveEditor;
   window.addEventListener('ndr:attendance-changed',e=>{if(e?.detail?.source==='attendance-v2')return;clearCache($('attMonth')?.value||currentMonth());if(active())scheduleLoad(true);else{register=null;loadedMonth=''}});
 }
