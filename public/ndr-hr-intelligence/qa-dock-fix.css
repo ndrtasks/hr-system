@@ -134,8 +134,25 @@
 #integrationPage .qualityscore{min-height:138px!important;height:auto!important}
 #integrationPage .qualitysources,#integrationPage .qualityissues,#integrationPage .probegrid{min-height:0!important}
 
+/* Final dark-surface gate: older styles are not allowed to leak white back into active work areas. */
+.panelpage .caseworkspace,.panelpage .employeeworkspace,
+.caseworkspace,.employeeworkspace,.exceptionform,
+.modalback .caseworkspace,.modalback .employeeworkspace{
+  background:linear-gradient(155deg,#071827,#04111d)!important;
+  color:#eafaff!important;
+  border-color:#154761!important;
+}
+.caseheader,.employeehero,.exceptionform,.casefooter,.sourcebar{background:#061522!important;border-color:#123e56!important}
+.metabox,.fact,.casepanel,.casestep,.employeestat,.empcase,.relatedrecord{
+  background:#051522!important;border-color:#123e56!important;color:#dff4fb!important
+}
+.caseintro h3,.casepanel h4,.employeehero h3,.metabox b,.fact b,.casestep b,.employeestat b,.empcase b{color:#f2fbff!important}
+.caseintro p,.casepanel p,.metabox span,.fact span,.casestep span,.employeehero p,.employeestat span,.empcase span{color:#739daf!important}
+.close,.relatedrecord{background:#071b2b!important;border-color:#16506d!important;color:#bfefff!important}
+
 /* Attendance modal is injected after the theme; force it into the same premium dark language. */
-.att-modalback{background:rgba(0,5,12,.76)!important}
+.modalback,.drawerback,.att-modalback,.att-bulkback{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.att-modalback{background:rgba(0,5,12,.82)!important}
 .att-modal{border:1px solid #16506d!important;background:linear-gradient(155deg,#071827,#04111d)!important;color:#eafaff!important;box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 26px rgba(26,223,255,.08)!important}
 .att-modal-head,.att-modal-foot{background:#061522!important;border-color:#123e56!important}
 .att-modal-head h3{color:#f4fcff!important}.att-modal-head p{color:#739fb2!important}
@@ -143,6 +160,13 @@
 .att-edit-field label{color:#79a8bb!important}.att-edit-field input,.att-edit-field textarea{background:#020d17!important;border-color:#15506d!important;color:#eefaff!important;color-scheme:dark!important}
 .att-edit-note{background:#071b2b!important;border:1px solid #123f59!important;color:#9bc6d7!important}
 .att-edit-note.warning{background:rgba(139,91,16,.18)!important;border-color:rgba(255,181,46,.36)!important;color:#ffd37a!important}
+
+/* Bulk attendance: same typography, no GPU blur, no style drift. */
+.att-bulk,.att-bulk input,.att-bulk select,.att-bulk textarea,.att-linkbtn{font-family:"Segoe UI",Tahoma,Arial,sans-serif!important}
+.att-bulkback{background:rgba(0,5,12,.84)!important}
+.att-bulk{background:linear-gradient(155deg,#071827,#04111d)!important;border-color:#16506d!important;box-shadow:0 28px 72px rgba(0,0,0,.52)!important}
+.att-bulkbox,.att-emplist,.abp-panel,.abp-counts>div{background:#051522!important;border-color:#123e56!important}
+.att-bulk input,.att-bulk select,.att-bulk textarea{background:#020d17!important;border-color:#15506d!important;color:#eefaff!important;color-scheme:dark!important}
 
 @media(max-width:900px){
   #integrationPage .liveconnect,#integrationPage .integrationgrid,#integrationPage .qualityhero{grid-template-columns:1fr!important}
