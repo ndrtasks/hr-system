@@ -8,13 +8,21 @@
     ['integrationPage','⇄','Odoo']
   ];
   let raf=0;
+  function bindBaseButton(b,page){
+    if(!b||b.dataset.ndrQaBound==='1')return;
+    b.dataset.ndrQaBound='1';
+    b.addEventListener('click',()=>{try{if(typeof showPage==='function')showPage(page)}catch{}});
+  }
   function ensureItems(nav){
     for(const [page,icon,label] of baseItems){
-      if(nav.querySelector(`button[data-page="${page}"]`))continue;
-      const b=document.createElement('button');
-      b.dataset.page=page;
-      b.innerHTML=`<span class="navicon">${icon}</span><span class="navtext">${label}</span>`;
-      nav.appendChild(b);
+      let b=nav.querySelector(`button[data-page="${page}"]`);
+      if(!b){
+        b=document.createElement('button');
+        b.dataset.page=page;
+        b.innerHTML=`<span class="navicon">${icon}</span><span class="navtext">${label}</span>`;
+        nav.appendChild(b);
+      }
+      bindBaseButton(b,page);
     }
   }
   function harden(){
