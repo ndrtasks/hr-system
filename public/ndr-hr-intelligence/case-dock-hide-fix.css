@@ -1,0 +1,2 @@
+/* Full case view owns the viewport; the command dock must not remain behind it. */
+body:has(.modalback.show) .sidebar{display:none!important}
