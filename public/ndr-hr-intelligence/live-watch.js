@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live';
+const AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-custom';
 const WATCH='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-change-watch';
 const POLL_MS=10000,SECONDARY_MS=30000,FULL_AUDIT_MS=300000,CACHE_KEY='ndr-live-audit-cache-v4',CACHE_MAX=86400000;
 let lastToken='',lastAudit=0,lastSecondary=0,auditBusy=false,watchBusy=false,started=false;
