@@ -8,10 +8,14 @@
     ['integrationPage','⇄','Odoo']
   ];
   let raf=0;
-  function bindBaseButton(b,page){
+  function bindFallback(b,page){
     if(!b||b.dataset.ndrQaBound==='1')return;
     b.dataset.ndrQaBound='1';
-    b.addEventListener('click',()=>{try{if(typeof showPage==='function')showPage(page)}catch{}});
+    b.addEventListener('click',()=>{
+      // app23 owns normal navigation. This listener is only a recovery path for a recreated/unbound item.
+      if(typeof b.onclick==='function')return;
+      try{if(typeof showPage==='function')showPage(page)}catch{}
+    });
   }
   function ensureItems(nav){
     for(const [page,icon,label] of baseItems){
@@ -22,7 +26,7 @@
         b.innerHTML=`<span class="navicon">${icon}</span><span class="navtext">${label}</span>`;
         nav.appendChild(b);
       }
-      bindBaseButton(b,page);
+      bindFallback(b,page);
     }
   }
   function harden(){
