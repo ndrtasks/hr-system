@@ -20,7 +20,7 @@ async function watch(profile){
 function changedSources(prev={},next={}){const keys=new Set([...Object.keys(prev||{}),...Object.keys(next||{})]);return [...keys].filter(k=>JSON.stringify(prev?.[k]||null)!==JSON.stringify(next?.[k]||null));}
 let coreSources={},secondarySources={};
 async function audit(reason,sources=[]){
-  if(typeof runAudit!=='function')return;
+  if(typeof runAudit!=='function'||window.__ndrAttendanceActive)return;
   badge(sources.length?`تحليل ${sources.map(srcAr).join('، ')}`:'تحديث البيانات','busy');
   await runAudit(true);
   lastAuditAt=Date.now();
@@ -28,7 +28,7 @@ async function audit(reason,sources=[]){
   badge(`محدث الآن • ${Number(state?.data?.summary?.total||0).toLocaleString('ar-SA')} حالة`);
 }
 async function tick(){
-  if(busy||document.visibilityState==='hidden')return;
+  if(busy||document.visibilityState==='hidden'||window.__ndrAttendanceActive)return;
   const t=token();if(!t){badge('بانتظار اتصال Odoo','bad');return}
   busy=true;
   try{
@@ -42,18 +42,18 @@ async function tick(){
       if(s?.stable!==false){const sfp=String(s?.fingerprint||'');if(!secondaryFp){secondaryFp=sfp;secondarySources=s?.sources||{}}else if(sfp&&sfp!==secondaryFp){const sources=changedSources(secondarySources,s?.sources||{});secondaryFp=sfp;secondarySources=s?.sources||{};await audit('secondary-change',sources)}}
     }
     if(Date.now()-lastAuditAt>300000&&state?.data)lastAuditAt=Date.now();
-    if(!busy)badge('متصل');
   }catch(e){console.warn('NDR lite watch:',e);badge('سيعيد المحاولة تلقائيا','bad')}
   finally{busy=false}
 }
 async function boot(){
   for(let i=0;i<100;i++){if(typeof runAudit==='function'&&typeof state!=='undefined'&&token()&&(window.NDROdooVault?.active||localStorage.getItem('ndr-odoo-url')))break;await sleep(100)}
   badge('جاري التحقق','busy');
-  try{if(!state?.data)await audit('boot',[])}catch{}
-  try{const c=await watch('core');coreFp=String(c?.fingerprint||'');coreSources=c?.sources||{}}catch{}
+  try{if(!state?.data&&!window.__ndrAttendanceActive)await audit('boot',[])}catch{}
+  try{if(!window.__ndrAttendanceActive){const c=await watch('core');coreFp=String(c?.fingerprint||'');coreSources=c?.sources||{}}}catch{}
   setInterval(tick,CORE_MS);
   window.addEventListener('focus',tick);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')tick()});
-  window.NDRLiveWatch={forceCheck:tick,forceAudit:()=>audit('manual',[]),status:()=>({mode:'lite',pollMs:CORE_MS,secondaryMs:SECONDARY_MS,lastAuditAt})};
+  window.addEventListener('ndr:attendance-view',e=>{if(e?.detail?.active)badge('الحضور مفتوح • المراقبة مؤقتا متوقفة','busy');else setTimeout(tick,500)});
+  window.NDRLiveWatch={forceCheck:tick,forceAudit:()=>audit('manual',[]),status:()=>({mode:'lite',pollMs:CORE_MS,secondaryMs:SECONDARY_MS,lastAuditAt,attendancePaused:!!window.__ndrAttendanceActive})};
 }
 boot();
 })();
