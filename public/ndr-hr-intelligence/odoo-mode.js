@@ -50,22 +50,12 @@
     const markReady=()=>{
       const mode=document.getElementById('modeText');if(mode)mode.textContent='Odoo Connected';
       const generated=document.getElementById('generated');
-      if(generated&&/بانتظار|لا توجد/.test(generated.textContent||''))generated.textContent='متصل بـ Odoo • جاهز لتشغيل التدقيق';
+      if(generated&&/بانتظار|لا توجد/.test(generated.textContent||''))generated.textContent='متصل بـ Odoo • جاهز للتدقيق';
       const risk=document.getElementById('risk');
       if(risk&&/بانتظار|الفحص/.test(risk.textContent||''))risk.textContent='متصل وجاهز للتدقيق';
       const summary=document.getElementById('summaryLine');
-      if(summary&&/لا توجد بيانات|بانتظار/.test(summary.textContent||''))summary.textContent='الاتصال جاهز — اضغط تشغيل التدقيق لجلب النتائج';
+      if(summary&&/لا توجد بيانات|بانتظار/.test(summary.textContent||''))summary.textContent='الاتصال جاهز';
       const source=document.getElementById('sourceText');if(source&&(source.textContent||'').trim()==='—')source.textContent='Odoo Live';
-    };
-
-    const syncIdentityOnce=async()=>{
-      if(!fromOdoo)return;
-      const key='ndr-odoo-identity-v4';
-      if(localStorage.getItem(key)==='1')return;
-      try{
-        await post(CONNECTOR,{action:'install_app',launchToken:token});
-        localStorage.setItem(key,'1');
-      }catch(e){console.warn('NDR Odoo identity sync:',e);}
     };
 
     const enableVaultMode=()=>{
@@ -99,6 +89,7 @@
     (async()=>{
       await wait();
       try{
+        // Opening NDR from Odoo is intentionally read-only. App/menu/icon changes happen only from the explicit update button.
         connectorInfo=await post(CONNECTOR,{action:'probe',launchToken:token});
         state.connection={baseUrl:connectorInfo.baseUrl||'',database:connectorInfo.database||'',apiKey:''};
         if(connectorInfo.baseUrl)localStorage.setItem('ndr-odoo-url',connectorInfo.baseUrl);
@@ -115,7 +106,6 @@
         addOdooChrome();
         window.NDROdooVault={token,connectorInfo,active:true};
         if(fromOdoo)document.title='NDR HR Intelligence — Odoo';
-        syncIdentityOnce();
       }catch(e){
         console.error('NDR Odoo Mode:',e);
         if(fromOdoo)addOdooChrome();
