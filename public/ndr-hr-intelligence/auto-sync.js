@@ -3,7 +3,7 @@
 if(window.__ndrAutoSyncInstalled)return;window.__ndrAutoSyncInstalled=true;
 const ATT_SAVE='/functions/v1/ndr-attendance-register?action=save';
 const ATT_KEYS=['attendance','leaves','leaveTypes','planning','resources','employees','departments','calendarLines','calendarLeaves','calendars','companies','employeeVersions','contracts'];
-const clearAttendanceCache=()=>{try{for(let i=sessionStorage.length-1;i>=0;i--){const k=sessionStorage.key(i);if(k&&k.startsWith('ndr-attendance-cache-v3:'))sessionStorage.removeItem(k)}}catch{}};
+const clearAttendanceCache=()=>{try{for(let i=sessionStorage.length-1;i>=0;i--){const k=sessionStorage.key(i)||'';if(k.startsWith('ndr-attendance-cache-v3:')||k.startsWith('ndr-attendance-cache-v4:'))sessionStorage.removeItem(k)}}catch{}};
 let reloadTimer=null;
 function attendanceActive(){return document.getElementById('attendancePage')?.classList.contains('active')}
 function refreshAttendance(delay=250){clearAttendanceCache();if(!attendanceActive())return;clearTimeout(reloadTimer);reloadTimer=setTimeout(()=>{const b=document.getElementById('attReload');if(b&&!b.disabled)b.click()},delay)}
