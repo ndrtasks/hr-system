@@ -1,0 +1,4 @@
+/* QA overlay order — interaction layers must never sit underneath the bottom dock. */
+.modalback,.drawerback,.att-modalback,.att-bulkback{z-index:1350!important}
+.toast{z-index:1520!important;bottom:104px!important}
+@media(max-width:760px){.toast{bottom:84px!important}}
