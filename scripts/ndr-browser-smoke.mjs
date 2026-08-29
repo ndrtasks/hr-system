@@ -62,6 +62,30 @@ async function clickPage(pageId,label,selector=`#${pageId}`){
 await clickPage('overview','الرئيسية');
 await page.screenshot({path:`${outDir}/ndr-qa-overview.png`,fullPage:true});
 await clickPage('findingsPage','الحالات');
+
+// Case workspace visual regression: it must behave like a full product page, not a narrow white PDF drawer.
+const modalBack=page.locator('#modalBack');
+const caseWorkspace=page.locator('.caseworkspace');
+ok(await modalBack.count()===1,'Case workspace shell exists');
+await modalBack.evaluate(el=>el.classList.add('show'));
+await page.waitForTimeout(120);
+const caseBox=await caseWorkspace.boundingBox();
+ok(caseBox&&caseBox.width>=1675,`Case workspace fills desktop width (${Math.round(caseBox?.width||0)}px)`);
+const modalBg=await modalBack.evaluate(el=>getComputedStyle(el).backgroundColor);
+const workspaceBg=await caseWorkspace.evaluate(el=>getComputedStyle(el).backgroundColor);
+ok(!['rgb(255, 255, 255)','rgba(255, 255, 255, 1)'].includes(modalBg),'Case page overlay is not white');
+ok(!['rgb(255, 255, 255)','rgba(255, 255, 255, 1)'].includes(workspaceBg),'Case workspace is not a white surface');
+const firstMeta=page.locator('.caseworkspace .metabox').first();
+if(await firstMeta.count()){
+  const metaBg=await firstMeta.evaluate(el=>getComputedStyle(el).backgroundColor);
+  ok(!['rgb(255, 255, 255)','rgba(255, 255, 255, 1)'].includes(metaBg),'Case facts use dark product surfaces');
+}
+ok(!(await dock.isVisible()),'Bottom dock hides while full case page is open');
+await page.screenshot({path:`${outDir}/ndr-qa-case-fullpage.png`,fullPage:true});
+await modalBack.evaluate(el=>el.classList.remove('show'));
+await page.waitForTimeout(120);
+ok(await dock.isVisible(),'Bottom dock returns after closing case page');
+
 await clickPage('rulesPage','القواعد');
 await clickPage('attendancePage','الحضور والانصراف');
 // The QA browser intentionally has no saved Odoo token. This checks navigation/render responsiveness without writing data.
@@ -110,8 +134,8 @@ const mobileDockBox=await dock.boundingBox();
 ok(mobileDockBox&&mobileDockBox.y>700,'Mobile dock remains anchored near bottom');
 const mobileButtons=await buttons.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return{page:el.dataset.page,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,visible:getComputedStyle(el).display!=='none'&&r.width>0&&r.height>0}}));
 for(const b of mobileButtons)ok(b.visible&&b.left>=0&&b.right<=390&&b.width>=45,`Mobile command ${b.page} is fully visible (${Math.round(b.width)}px)`);
-const mobileLabels=await buttons.evaluateAll(els=>els.map(el=>({page:el.dataset.page,label:getComputedStyle(el,'::after').content})));
-for(const x of mobileLabels)ok(x.label&&x.label!=='none'&&x.label!=='normal'&&x.label!=='""',`Mobile command ${x.page} keeps a visible label`);
+const mobileLabels=await buttons.evaluateAll(els=>els.map(el=>{const after=getComputedStyle(el,'::after').content;const text=el.querySelector('.navtext');const ts=text?getComputedStyle(text):null;return{page:el.dataset.page,pseudo:after,text:text?.textContent||'',textVisible:!!text&&ts?.display!=='none'&&ts?.visibility!=='hidden'&&Number(ts?.opacity||1)>0}}));
+for(const x of mobileLabels){const pseudoVisible=x.pseudo&&x.pseudo!=='none'&&x.pseudo!=='normal'&&x.pseudo!=='""';ok(pseudoVisible||(x.textVisible&&x.text.trim().length>0),`Mobile command ${x.page} keeps a visible label`);}
 const topbar=page.locator('.topbar'),topbarBox=await topbar.boundingBox();
 ok(topbarBox&&topbarBox.height>=100,'Mobile topbar expands to contain its controls');
 const mobileActions=await page.locator('.topactions > *').evaluateAll(els=>els.filter(el=>getComputedStyle(el).display!=='none').map(el=>{const r=el.getBoundingClientRect();return{tag:el.id||el.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom}}));
@@ -123,6 +147,6 @@ ok(pageErrors.length===0,`No uncaught page errors (${pageErrors.length})`);
 const seriousConsole=consoleErrors.filter(x=>!/Odoo|اتصال|401|403|attendance/i.test(x));
 ok(seriousConsole.length===0,`No unexpected console errors (${seriousConsole.length})`);
 
-fs.writeFileSync(`${outDir}/browser-report.json`,JSON.stringify({base,readyMs,labels,inputBg,drawerBg,dockZ,drawerZ,mobileButtons,mobileLabels,mobileActions,pageErrors,consoleErrors},null,2));
+fs.writeFileSync(`${outDir}/browser-report.json`,JSON.stringify({base,readyMs,labels,inputBg,modalBg,workspaceBg,drawerBg,dockZ,drawerZ,mobileButtons,mobileLabels,mobileActions,pageErrors,consoleErrors},null,2));
 await browser.close();
 console.log('NDR browser QA: PASS');
