@@ -20,7 +20,7 @@
     <button data-page="rulesPage"><span class="navicon">⬡</span><span class="navtext">محرك القواعد</span></button>
     <button data-page="integrationPage"><span class="navicon">⇄</span><span class="navtext">ربط Odoo</span></button>
   </nav>
-  <div class="sidefooter"><span class="mini">PRODUCT LAB • V2</span><strong>طبقة رقابة مستقلة</strong><p>تقرأ العمليات، تكشف التعارضات، وتحوّل بيانات HR إلى قرارات واضحة.</p><div class="privacyline"><span class="lockshape">◇</span><span>Read-only architecture</span></div></div>
+  <div class="sidefooter"><span class="mini">الاشتراك</span><strong>NDR Professional</strong><p>الخطة التجريبية مفعلة على مساحة العمل الحالية.</p><div class="privacyline"><span class="lockshape">●</span><span>الحالة: فعالة</span></div></div>
 </aside>
 <main class="main">
   <header class="topbar">
