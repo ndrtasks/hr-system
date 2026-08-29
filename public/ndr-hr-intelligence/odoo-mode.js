@@ -16,7 +16,7 @@
     if(!token)return;
 
     const CONNECTOR='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-odoo-connector';
-    const VAULT_AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-vault';
+    const VAULT_AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live';
     const OLD_APIS=['/functions/v1/ndr-hr-audit-v4','/functions/v1/ndr-hr-audit-nav','/functions/v1/ndr-hr-audit-schedule'];
     let connectorInfo=null;
 
