@@ -3,7 +3,8 @@
     const params=new URLSearchParams(location.search);
     const fromOdoo=params.get('source')==='odoo';
     const incoming=params.get('connector')||'';
-    if(!fromOdoo&&!incoming)return;
+    const stored=localStorage.getItem('ndr-connector-token')||'';
+    if(!fromOdoo&&!incoming&&!stored)return;
 
     if(incoming){
       localStorage.setItem('ndr-connector-token',incoming);
@@ -11,7 +12,7 @@
       const q=params.toString();
       history.replaceState({},'',location.pathname+(q?'?'+q:'')+location.hash);
     }
-    const token=localStorage.getItem('ndr-connector-token')||'';
+    const token=incoming||localStorage.getItem('ndr-connector-token')||'';
     if(!token)return;
 
     const CONNECTOR='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-odoo-connector';
@@ -35,7 +36,7 @@
     });
 
     const addOdooChrome=()=>{
-      if(document.getElementById('ndrOdooMode'))return;
+      if(!fromOdoo||document.getElementById('ndrOdooMode'))return;
       const host=document.querySelector('.topactions');
       if(!host)return;
       const badge=document.createElement('span');
@@ -47,6 +48,8 @@
     };
 
     const enableVaultMode=()=>{
+      if(window.__ndrVaultFetchEnabled)return;
+      window.__ndrVaultFetchEnabled=true;
       const originalFetch=window.fetch.bind(window);
       window.fetch=async(input,init)=>{
         try{
@@ -80,18 +83,21 @@
         if(connectorInfo.baseUrl)localStorage.setItem('ndr-odoo-url',connectorInfo.baseUrl);
         if(connectorInfo.database)localStorage.setItem('ndr-odoo-db',connectorInfo.database);else localStorage.removeItem('ndr-odoo-db');
         state.connected=true;state.demo=false;
+        sessionStorage.removeItem('ndr-odoo-key');
         enableVaultMode();
         try{syncConnectionInputs();}catch{}
         const key=document.getElementById('connectionKey');
-        if(key){key.value='';key.placeholder='محفوظ بشكل مشفر في NDR Vault';key.disabled=true;}
-        const secret=document.getElementById('secretState');if(secret)secret.textContent='محفوظ ومشفّر في NDR Vault';
+        if(key){key.value='';key.disabled=false;key.placeholder='الاتصال محفوظ ومشفر — أدخل مفتاحا جديدا فقط عند التغيير';}
+        const secret=document.getElementById('secretState');if(secret){secret.textContent='الاتصال محفوظ ومشفر';secret.classList.remove('empty');}
         try{updateConnectionUi();}catch{}
         const mode=document.getElementById('modeText');if(mode)mode.textContent='Odoo Connected';
         addOdooChrome();
-        document.title='NDR HR Intelligence — Odoo';
+        window.NDROdooVault={token,connectorInfo,active:true};
+        if(fromOdoo)document.title='NDR HR Intelligence — Odoo';
       }catch(e){
         console.error('NDR Odoo Mode:',e);
-        addOdooChrome();
+        if(fromOdoo)addOdooChrome();
+        window.NDROdooVault={token,active:false,error:String(e?.message||e)};
         try{toast('تعذر تفعيل اتصال Odoo المحفوظ. افتح ربط Odoo للمراجعة.');}catch{}
       }
     })();
