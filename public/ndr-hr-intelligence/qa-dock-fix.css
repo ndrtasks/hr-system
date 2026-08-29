@@ -150,6 +150,16 @@
 .caseintro p,.casepanel p,.metabox span,.fact span,.casestep span,.employeehero p,.employeestat span,.empcase span{color:#739daf!important}
 .close,.relatedrecord{background:#071b2b!important;border-color:#16506d!important;color:#bfefff!important}
 
+/* Notification center is a first-class part of the product, not a leftover white drawer. */
+.ndr-notify-btn{background:#061522!important;border-color:#154761!important;color:#bfe4f1!important;box-shadow:none!important}
+.ndr-bell{background:#082338!important;color:#bff4ff!important;border:1px solid #16506d!important}
+.ndr-notify-shade{z-index:1490!important;background:rgba(0,5,12,.78)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.ndr-notify-drawer{z-index:1500!important;background:linear-gradient(180deg,#071827,#03101b)!important;border-color:#16506d!important;color:#eafaff!important;box-shadow:26px 0 72px rgba(0,0,0,.58)!important}
+.ndr-notify-head{background:#061522!important;border-color:#123e56!important}.ndr-notify-head span{color:#6d9cb1!important}.ndr-notify-head h3{color:#f4fcff!important}.ndr-notify-head button{background:#071b2b!important;border-color:#16506d!important;color:#dff8ff!important}
+.ndr-notify-tools{background:#04111d!important;border-color:#123e56!important}.ndr-notify-tools button{background:#071b2b!important;border-color:#154761!important;color:#a9d2e0!important}
+.ndr-notify-list{background:#03101b!important}.ndr-note{border-color:#10364d!important;color:#dff4fb!important}.ndr-note:hover{background:#071b2b!important}.ndr-note strong{color:#effaff!important}.ndr-note p{color:#84aabd!important}.ndr-note small{color:#668fa3!important}.ndr-note.read{opacity:.62!important}
+.ndr-notify-empty{color:#6f9bad!important}.ndr-notify-stack{z-index:1510!important;left:20px!important;bottom:106px!important}.ndr-live-pop{background:linear-gradient(155deg,#071827,#04111d)!important;border-color:#16506d!important;color:#eafaff!important;box-shadow:0 18px 46px rgba(0,0,0,.44)!important}.ndr-live-pop strong{color:#f2fbff!important}.ndr-live-pop span{color:#82aabd!important}
+
 /* Attendance modal is injected after the theme; force it into the same premium dark language. */
 .modalback,.drawerback,.att-modalback,.att-bulkback{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .att-modalback{background:rgba(0,5,12,.82)!important}
@@ -176,4 +186,5 @@
   .sidebar>.brand{flex-basis:48px!important;width:48px!important;min-width:48px!important;height:48px!important}
   .sidebar>.nav{justify-content:flex-start!important;height:48px!important;min-height:48px!important}
   .sidebar>.nav>button[data-page]{min-width:106px!important;height:48px!important;min-height:48px!important;font-size:11px!important}
+  .ndr-notify-stack{bottom:86px!important;left:10px!important;width:min(330px,calc(100vw - 20px))!important}
 }
