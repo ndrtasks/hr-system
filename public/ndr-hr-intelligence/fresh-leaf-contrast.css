@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Tajawal:wght@500;600;700;800&display=swap');
+
+/* Final contrast pass for NDR Fresh Leaf */
+:root{
+  --nd-bg:#e8f0ea;
+  --nd-bg-2:#dfe9e2;
+  --nd-panel:#f8fbf9;
+  --nd-panel-strong:#ffffff;
+  --nd-line:#bfd0c3;
+  --nd-line-strong:#9fbaa6;
+  --nd-text:#0b2012;
+  --nd-text-2:#21392a;
+  --nd-muted:#4b6353;
+  --nd-green:#087f33;
+  --nd-green-2:#16a34a;
+  --nd-green-3:#3cc665;
+  --nd-red:#d72f3c;
+  --nd-orange:#df7d0b;
+  --nd-blue:#2f6fc5;
+  --nd-purple:#6d49a9;
+  --nd-shadow:0 16px 44px rgba(18,58,30,.12),0 3px 12px rgba(18,58,30,.06);
+}
+html{font-size:17px!important;background:var(--nd-bg)!important}
+body{
+  font-family:'Cairo','Tajawal','Segoe UI',Tahoma,Arial,sans-serif!important;
+  font-weight:600!important;
+  color:var(--nd-text)!important;
+  background:
+    radial-gradient(800px 420px at 92% 5%,rgba(58,166,89,.12),transparent 70%),
+    radial-gradient(720px 420px at 3% 92%,rgba(46,143,74,.10),transparent 72%),
+    linear-gradient(180deg,#edf4ef 0%,#e6eee8 46%,#dfe9e2 100%)!important;
+}
+body,h1,h2,h3,h4,h5,h6,p,small,span,b,strong,a,button,input,select,textarea,label,td,th{
+  font-family:'Cairo','Tajawal','Segoe UI',Tahoma,Arial,sans-serif!important;
+}
+body p,body small{color:var(--nd-muted)!important}
+
+/* Overall frame */
+.shell{background:transparent!important}
+.sidebar{
+  background:linear-gradient(180deg,#f7faf8 0%,#edf4ef 100%)!important;
+  border:1px solid var(--nd-line)!important;
+  box-shadow:0 20px 55px rgba(15,58,29,.14)!important;
+}
+.sidebar::after{background:linear-gradient(150deg,rgba(255,255,255,.55),transparent 36%,rgba(20,125,54,.07))!important}
+.brandtext strong{color:#071b0e!important;font-size:21px!important;font-weight:800!important}
+.brandtext small{color:#486051!important;font-size:11px!important;font-weight:700!important}
+.workspace,.sidefooter{
+  background:#eaf2ec!important;
+  border-color:#bdcec1!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.8),0 8px 20px rgba(25,68,38,.06)!important;
+}
+.workspace b,.sidefooter strong{color:#102b19!important;font-weight:800!important}
+.workspace small,.sidefooter p,.privacyline{color:#4b6253!important}
+.navlabel{color:#607568!important;font-weight:800!important}
+.nav button{color:#173822!important;font-weight:700!important}
+.nav button:hover{background:#e0ede3!important;color:#076b2a!important;border-color:#b9cfbf!important}
+.nav button.active{
+  background:linear-gradient(115deg,#29b957 0%,#078435 100%)!important;
+  color:#fff!important;
+  border-color:#0d8d3a!important;
+  box-shadow:0 12px 28px rgba(7,119,46,.25),inset 0 1px rgba(255,255,255,.28)!important;
+}
+.navicon{background:#e7efe9!important;border-color:#bfd0c3!important;color:#284b35!important}
+.nav button.active .navicon{background:rgba(255,255,255,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.24)!important}
+
+/* Header */
+.topbar{
+  background:rgba(246,250,247,.97)!important;
+  border:1px solid var(--nd-line)!important;
+  box-shadow:0 16px 42px rgba(16,57,29,.10)!important;
+}
+.titlebox h1{color:#0a2715!important;font-size:31px!important;font-weight:800!important;text-shadow:none!important}
+.titlebox p,.crumb{color:#4d6555!important;font-weight:700!important}
+.statuspill,.ghost,.iconbtn,.sectionaction,.sourcebtn,.att-btn,.att-edit,.att-close,.filter,.clearcategory,.selectbox,.searchbox{
+  background:#f8fbf9!important;
+  border-color:#b9ccc0!important;
+  color:#173b25!important;
+  font-weight:700!important;
+  box-shadow:0 5px 14px rgba(20,61,32,.06)!important;
+}
+.statuspill:hover,.ghost:hover,.iconbtn:hover,.sectionaction:hover,.sourcebtn:hover,.att-btn:hover,.att-edit:hover,.filter:hover,.clearcategory:hover{
+  background:#e4efe7!important;
+  color:#086c2b!important;
+  border-color:#9fbaa6!important;
+}
+.primary,.att-btn.primary{
+  background:linear-gradient(110deg,#28b957 0%,#0c943c 55%,#06742e 100%)!important;
+  color:#fff!important;
+  border-color:#087f33!important;
+  box-shadow:0 11px 27px rgba(9,124,49,.24)!important;
+}
+
+/* Surfaces */
+.card,.metricgrid .metric,.finding,.rulecontrol,.casegroup,.qualitysource,.probe,.scope,.employeestat,.decision,.metabox,.fact,.casepanel,
+.att-toolbar,.att-summary,.att-sheet,.att-modehint,.rulecommand,.policysplit,.documentmap,.liveconnect,.connectioncard,.qualityscore,.findingpage,.insightbar{
+  background:linear-gradient(160deg,#fbfdfb 0%,#f1f6f2 100%)!important;
+  border-color:var(--nd-line)!important;
+  box-shadow:var(--nd-shadow)!important;
+}
+.card:hover,.finding:hover,.rulecontrol:hover,.casegroup:hover,.decision:hover{
+  border-color:var(--nd-line-strong)!important;
+  box-shadow:0 22px 56px rgba(16,58,29,.15)!important;
+}
+.sectionhead h3,.policycopy h3,.documentmap h3,.pagehero h2,.finding h4,.rulecontrol h4,.casegroup h4,.qualitysource b,
+.scorecopy strong,.executive h2,.att-sheet-head b,.att-head h2{
+  color:#0d2817!important;
+  font-weight:800!important;
+}
+.sectionhead p,.policycopy p,.documentmap p,.pagehero p,.finding p,.rulecontrol p,.casegroup p,.qualitysource p,.scorecopy span,.healthfoot{
+  color:#496052!important;
+  font-weight:600!important;
+}
+
+/* Dashboard cards */
+.metricgrid .metric{background:#f8fbf9!important;min-height:132px!important}
+.metrictrend,.metricvalue span{color:#496052!important;font-weight:700!important}
+.metricvalue b{font-size:38px!important;font-weight:800!important;color:#102918!important}
+.metric.critical .metricvalue b{color:var(--nd-red)!important}
+.metric.high .metricvalue b{color:var(--nd-orange)!important}
+.metric.medium .metricvalue b{color:var(--nd-blue)!important}
+.metric.total .metricvalue b{color:var(--nd-green)!important}
+.healthcard,.executive{background:linear-gradient(155deg,#fbfdfb,#eef5f0)!important}
+.score,.ringscore b,.changeitem b,.coveragebox b,.insightstat b{color:#0b2816!important;font-weight:800!important}
+.healthmeter{background:#cedbd1!important}
+.healthmeter span{background:linear-gradient(90deg,#49c86b,#159d43,#08762f)!important}
+.orbitlabels span{background:#eef5f0!important;border-color:#b9cbbf!important;color:#23432f!important;font-weight:700!important}
+.changeitem{background:#f3f8f4!important;border-color:#bfd0c3!important}
+.changeitem span{color:#52685a!important;font-weight:700!important}
+
+/* Case/risk text: remove washed-out blue */
+.finding a,.casegroup a,.decision a,.sourcecopy a,.att-page a{color:#1d5f94!important;font-weight:700!important}
+.severityorb{background:#fbe9eb!important;border-color:#eebac0!important}
+.severityorb b{color:#c82936!important}
+.trialbadge,.ruleavailability.ready,.ruleavailability.mapped{background:#dff1e4!important;color:#087735!important;border-color:#b4d5bd!important}
+.ruleavailability.locked{background:#f2e9d8!important;color:#70531a!important;border-color:#d8c7a4!important}
+
+/* Attendance */
+.att-page{color:#102619!important}
+.att-head h2{font-size:31px!important;color:#0a2a17!important}
+.att-head p{font-size:14px!important;color:#496052!important;font-weight:600!important}
+.att-kicker{color:#087a31!important;font-weight:800!important}
+.att-toolbar,.att-summary,.att-sheet,.att-modehint{background:#f7faf8!important}
+.att-field label,.att-edit-field label{color:#2c4936!important;font-size:11px!important;font-weight:800!important}
+.att-field input,.att-field select,.att-edit-field input,.att-edit-field textarea,input,select,textarea{
+  background:#ffffff!important;
+  color:#0d2415!important;
+  border-color:#aebfb3!important;
+  font-weight:700!important;
+}
+.att-table{font-size:12.5px!important}
+.att-table thead th{background:#e1ebe4!important;color:#274734!important;font-size:11px!important;font-weight:800!important;border-color:#c3d1c6!important}
+.att-table tbody td{background:#f8fbf9!important;color:#243e2d!important;font-size:12px!important;font-weight:600!important;border-color:#d6e0d8!important}
+.att-table tbody tr:hover td{background:#eaf3ec!important}
+.att-table td.emp{color:#0b2816!important;font-weight:800!important}
+.att-table td small{color:#566b5d!important;font-weight:600!important}
+.att-stat{background:#f3f8f4!important;border-color:#c6d5ca!important}
+.att-stat span{color:#506659!important;font-weight:700!important}
+.att-stat b{color:#0d2817!important;font-weight:800!important}
+.att-status.present{color:#0a7330!important;background:#dff1e4!important;border-color:#b4d7bd!important}
+.att-status.leave{color:#285f9f!important;background:#e3edf9!important;border-color:#bed1eb!important}
+.att-status.conflict{color:#c52d39!important;background:#fbe6e8!important;border-color:#efb8bd!important}
+.att-status.missing,.att-status.warning{color:#8b5a08!important;background:#f7ecd4!important;border-color:#ddc799!important}
+.att-status.pending{color:#604393!important;background:#ece4f5!important;border-color:#cdbce2!important}
+.att-status.off{color:#52665a!important;background:#e9efeb!important;border-color:#ccd7cf!important}
+
+/* Modals */
+.modalback,.att-modalback{background:rgba(11,31,18,.44)!important}
+.caseworkspace,.att-modal{background:#eef4f0!important;border-color:#aebfb3!important;box-shadow:0 38px 110px rgba(8,32,17,.32)!important}
+.caseheader,.att-modal-head,.sourcebar,.casefooter,.att-modal-foot{background:#f6faf7!important;border-color:#c3d2c6!important}
+.caseintro h3,.att-modal-head h3{color:#092315!important}
+.caseintro p,.att-modal-head p,.sourcecopy span{color:#52685a!important}
+
+/* Leaves remain decorative, but less washed-out */
+.fl-leaf{background:linear-gradient(145deg,rgba(17,126,50,.30),rgba(54,172,83,.12))!important;border-color:rgba(12,104,39,.15)!important;filter:drop-shadow(0 8px 14px rgba(20,88,39,.10))!important}
+.fl-leaf::after{background:rgba(11,91,34,.30)!important}
+
+@media(max-width:1180px){html{font-size:16px!important}.metricvalue b{font-size:34px!important}}
+@media(max-width:760px){html{font-size:16px!important}.titlebox h1{font-size:26px!important}.att-head h2{font-size:27px!important}}
