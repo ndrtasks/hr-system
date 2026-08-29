@@ -12,6 +12,7 @@ const loader=read('loader.js');
 const layout1=read('layout1.part');
 const att=read('attendance-v2.js');
 const auto=read('auto-sync.js');
+const live=read('live-watch-lite.js');
 const dock=read('qa-dock-fix.css');
 const overlay=read('qa-overlay-order.css');
 const guard=read('qa-dock-guard.js');
@@ -24,6 +25,7 @@ ok(index.includes('qa-overlay-order.css'),'QA overlay order stylesheet is loaded
 ok(index.indexOf('qa-overlay-order.css')>index.indexOf('qa-dock-fix.css'),'Overlay order loads after dock styling');
 ok(index.includes('qa-dock-guard.js'),'QA dock guard is loaded');
 ok(index.includes('qa-runtime-hardening.js'),'QA runtime hardening is loaded');
+ok(loader.includes("Promise.all(urls.map"),'Layout fragments are fetched in parallel');
 ok(loader.includes("'/ndr-hr-intelligence/attendance-v2.js'"),'Attendance v2 is the active attendance client');
 ok(!loader.includes("'/ndr-hr-intelligence/attendance.js'"),'Legacy heavy attendance client is not loaded');
 ok(loader.includes("'/ndr-hr-intelligence/live-watch-lite.js'"),'Light live watcher is loaded');
@@ -39,6 +41,11 @@ ok(att.includes("$('crumbTitle').textContent='ATTENDANCE'"),'Attendance updates 
 ok(att.includes('ndr-attendance-cache-v4:'),'Attendance uses cache v4');
 ok(auto.includes("ndr-attendance-cache-v4:"),'Live sync invalidates attendance cache v4');
 ok(auto.includes("ndr-attendance-cache-v3:"),'Live sync also clears legacy attendance cache');
+ok(!auto.includes('window.fetch='),'Attendance auto-sync no longer monkey-patches fetch');
+ok(live.includes("const beforeRun=state?.data?.runId||''"),'Live watcher verifies that an audit actually produced a new result');
+ok(live.includes("await audit('core-change',sources);\n      coreFp=fp"),'Core fingerprint is committed only after successful audit');
+ok(live.includes("await audit('secondary-change',sources);\n          secondaryFp=sfp"),'Secondary fingerprint is committed only after successful audit');
+ok(live.includes("await audit('periodic-refresh',[])"),'Five-minute fallback performs a real audit instead of only moving a timestamp');
 ok(hardening.includes('window.__ndrAttendanceActive'),'Audit render hardening recognizes attendance mode');
 ok(hardening.includes('ndrDeferredAuditRender'),'Heavy audit DOM render is deferred while attendance is open');
 
