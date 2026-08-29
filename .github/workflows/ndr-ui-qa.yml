@@ -14,3 +14,29 @@ jobs:
           node-version: '24'
       - name: Run NDR smoke checks
         run: node scripts/ndr-qa-smoke.mjs
+
+  browser:
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright for QA only
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Run rendered NDR browser QA
+        env:
+          NDR_QA_URL: https://ndr-tasks-dev-git-ndr-ui-qa-ndrs-projects-cfdc98d2.vercel.app/ndr-hr-intelligence/
+        run: node scripts/ndr-browser-smoke.mjs
+      - name: Upload rendered QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ndr-ui-qa-evidence
+          path: qa-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
