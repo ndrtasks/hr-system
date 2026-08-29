@@ -5,6 +5,7 @@ const WATCH='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-change
 const POLL_MS=10000, FULL_MS=300000;
 let lastFingerprint='',lastFull=0,auditBusy=false,watchBusy=false,started=false;
 const token=()=>window.NDROdooVault?.token||localStorage.getItem('ndr-connector-token')||'';
+function migrateRules(){try{if(localStorage.getItem('ndr-r020-live-migrated')==='1')return;const cfg=JSON.parse(localStorage.getItem('ndr-rule-config')||'{}')||{};cfg.R020={...(cfg.R020||{}),enabled:true};localStorage.setItem('ndr-rule-config',JSON.stringify(cfg));localStorage.setItem('ndr-r020-live-migrated','1');if(typeof state!=='undefined')state.ruleConfig=cfg}catch{}}
 const policy=()=>{try{return{...(JSON.parse(localStorage.getItem('ndr-policy-overrides')||'null')||{}),rules:JSON.parse(localStorage.getItem('ndr-rule-config')||'{}')||{}}}catch{return{rules:{}}}};
 const findingSig=d=>{try{return(d?.findings||[]).map(f=>`${f.code}:${f.ref?.model||''}:${f.ref?.id||''}:${f.employeeRef?.id||''}`).sort().join('|')}catch{return''}};
 function ready(){return typeof state!=='undefined'&&typeof render==='function'&&typeof trackRun==='function'}
@@ -36,6 +37,6 @@ async function checkChanges(){
     else if(Date.now()-lastFull>FULL_MS){await runAudit('periodic',false)}
   }catch(e){console.warn('NDR change watch:',e)}finally{watchBusy=false}
 }
-function start(){if(started)return;started=true;window.addEventListener('ndr:attendance-changed',()=>setTimeout(()=>runAudit('attendance-write',true),250));window.addEventListener('focus',()=>checkChanges());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkChanges()});setInterval(checkChanges,POLL_MS);setTimeout(checkChanges,700)}
+function start(){if(started)return;started=true;migrateRules();window.addEventListener('ndr:attendance-changed',()=>setTimeout(()=>runAudit('attendance-write',true),250));window.addEventListener('focus',()=>checkChanges());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkChanges()});setInterval(checkChanges,POLL_MS);setTimeout(checkChanges,700)}
 (async function boot(){for(let i=0;i<150;i++){if(ready()){start();return}await new Promise(r=>setTimeout(r,80))}})();
 })();
