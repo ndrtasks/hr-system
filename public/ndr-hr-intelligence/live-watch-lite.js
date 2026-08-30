@@ -19,16 +19,31 @@ async function watch(profile){
 }
 function changedSources(prev={},next={}){const keys=new Set([...Object.keys(prev||{}),...Object.keys(next||{})]);return [...keys].filter(k=>JSON.stringify(prev?.[k]||null)!==JSON.stringify(next?.[k]||null));}
 let coreSources={},secondarySources={};
+async function observedAuditRun(){
+  const previousFetch=window.fetch;
+  let seen=false,ok=false,status=0;
+  const wrapped=async(input,init)=>{
+    const url=typeof input==='string'?input:input?.url||'';
+    const response=await previousFetch(input,init);
+    if((url.includes('/ndr-hr-audit-v4')||url.includes('/ndr-hr-audit-live')||url.includes('/ndr-hr-audit-vault'))&&url.includes('action=audit')){
+      seen=true;ok=!!response?.ok;status=Number(response?.status||0);
+    }
+    return response;
+  };
+  window.fetch=wrapped;
+  try{await runAudit(true);}finally{if(window.fetch===wrapped)window.fetch=previousFetch;}
+  return{seen,ok,status};
+}
 async function audit(reason,sources=[]){
   if(typeof runAudit!=='function'||window.__ndrAttendanceActive)return false;
-  const beforeRun=state?.data?.runId||'';
-  const beforeGenerated=state?.data?.generatedAt||'';
-  const hadData=!!state?.data;
   badge(sources.length?`تحليل ${sources.map(srcAr).join('، ')}`:'تحديث البيانات','busy');
-  await runAudit(true);
+  const observed=await observedAuditRun();
   const after=state?.data;
-  const succeeded=!!after&&(!hadData||String(after.runId||'')!==String(beforeRun)||String(after.generatedAt||'')!==String(beforeGenerated));
-  if(!succeeded){badge('تعذر التحديث • سيعيد المحاولة','bad');throw new Error('لم يكتمل التدقيق الحي؛ لم يتم اعتماد التغيير')}
+  const succeeded=!!after&&observed.seen&&observed.ok;
+  if(!succeeded){
+    badge('تعذر التحديث • سيعيد المحاولة','bad');
+    throw new Error(observed.seen?`لم يكتمل التدقيق الحي (${observed.status||'network'})`:'لم يبدأ طلب التدقيق الحي');
+  }
   lastAuditAt=Date.now();
   window.dispatchEvent(new CustomEvent('ndr:audit-updated',{detail:{reason,sourceChanged:sources.length>0,changedSources:sources,changed:true,total:after?.summary?.total||0}}));
   badge(`محدث الآن • ${Number(after?.summary?.total||0).toLocaleString('ar-SA')} حالة`);
@@ -65,6 +80,7 @@ async function tick(){
     }
 
     if(state?.data&&lastAuditAt&&Date.now()-lastAuditAt>=FALLBACK_AUDIT_MS)await audit('periodic-refresh',[]);
+    else if(state?.data)badge(`محدث • ${Number(state.data?.summary?.total||0).toLocaleString('ar-SA')} حالة`);
   }catch(e){console.warn('NDR lite watch:',e);badge('سيعيد المحاولة تلقائيا','bad')}
   finally{busy=false}
 }
@@ -73,7 +89,7 @@ async function boot(){
   badge('جاري التحقق','busy');
   try{if(!state?.data&&!window.__ndrAttendanceActive)await audit('boot',[])}catch{}
   try{if(!window.__ndrAttendanceActive){const c=await watch('core');if(c?.stable!==false){coreFp=String(c?.fingerprint||'');coreSources=c?.sources||{}}}}catch{}
-  if(state?.data&&!lastAuditAt)lastAuditAt=Date.now();
+  if(state?.data&&!lastAuditAt){lastAuditAt=Date.now();badge(`محدث • ${Number(state.data?.summary?.total||0).toLocaleString('ar-SA')} حالة`);}
   setInterval(tick,CORE_MS);
   window.addEventListener('focus',tick);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')tick()});
   window.addEventListener('ndr:attendance-view',e=>{if(e?.detail?.active)badge('الحضور مفتوح • المراقبة مؤقتا متوقفة','busy');else setTimeout(tick,500)});
