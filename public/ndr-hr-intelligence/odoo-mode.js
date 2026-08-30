@@ -16,7 +16,7 @@
     if(!token)return;
 
     const CONNECTOR='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-odoo-connector';
-    const VAULT_AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live';
+    const VAULT_AUDIT='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live-v2';
     const OLD_APIS=['/functions/v1/ndr-hr-audit-v4','/functions/v1/ndr-hr-audit-nav','/functions/v1/ndr-hr-audit-schedule'];
     let connectorInfo=null;
 
@@ -105,6 +105,7 @@
         markReady();
         addOdooChrome();
         window.NDROdooVault={token,connectorInfo,active:true};
+        window.dispatchEvent(new CustomEvent('ndr:odoo-vault-ready',{detail:{baseUrl:connectorInfo.baseUrl||''}}));
         if(fromOdoo)document.title='NDR HR Intelligence — Odoo';
       }catch(e){
         console.error('NDR Odoo Mode:',e);
