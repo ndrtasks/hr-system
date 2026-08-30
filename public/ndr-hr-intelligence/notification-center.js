@@ -32,13 +32,22 @@ function add(title,text,kind='info',findingKey=''){
   const note={id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title,text,kind,findingKey,at:now(),read:false};notes.unshift(note);notes=notes.slice(0,50);save();popup(note)
 }
 function popup(n){ensure();const stack=document.getElementById('ndrNotifyStack');if(!stack)return;const el=document.createElement('button');el.className=`ndr-live-pop ${n.kind}`;el.innerHTML=`<i></i><div><strong>${esc(n.title)}</strong><span>${esc(n.text||'')}</span></div>`;el.onclick=()=>{if(n.findingKey&&typeof openFinding==='function')openFinding(n.findingKey);el.remove()};stack.prepend(el);requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),240)},5200)}
+function describeChange(d){
+  const before=d?.before||{},after=d?.after||{},label=String(after.label||'').trim(),oldLabel=String(before.label||'').trim(),source=srcAr(d?.key||'');
+  if(d?.key==='employees'&&label&&oldLabel&&label!==oldLabel)return `تغير اسم الموظف من ${oldLabel} إلى ${label}`;
+  return label?`${source}: ${label}`:source;
+}
 function process(detail={}){
   ensure();const cur=currentMap();if(!seeded){persistSnapshot(cur);seeded=true;return}
   const prev=snapshot||{},newKeys=Object.keys(cur).filter(k=>!prev[k]),cleared=Object.keys(prev).filter(k=>!cur[k]);
   if(newKeys.length){newKeys.slice(0,3).forEach(k=>{const f=cur[k];const kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});if(newKeys.length>3)add(`${newKeys.length} حالات جديدة`,`تم رصد ${newKeys.length} حالات بعد آخر تغيير في Odoo`,'info')}
   if(cleared.length)add('اختفت حالة من المصدر',cleared.length===1?(prev[cleared[0]]?.title||'تمت إزالة الحالة بعد تحديث المصدر'):`${cleared.length} حالات لم تعد موجودة بعد التحديث`,'success');
-  const sources=Array.isArray(detail.changedSources)?detail.changedSources:[];
-  if(detail.sourceChanged&&!newKeys.length&&!cleared.length){add('تغيير في Odoo',sources.length?`تم تحديث ${sources.map(srcAr).join('، ')} بدون ظهور حالة جديدة`:'تم رصد تغيير وتحديث البيانات','change')}
+  const sources=Array.isArray(detail.changedSources)?detail.changedSources:[],details=Array.isArray(detail.changedDetails)?detail.changedDetails:[];
+  if(detail.sourceChanged&&!newKeys.length&&!cleared.length){
+    const lines=details.map(describeChange).filter(Boolean);
+    const text=lines.length?`تم تحديث ${lines.slice(0,2).join(' • ')}${lines.length>2?` • +${lines.length-2} أخرى`:''} دون ظهور حالة جديدة`:sources.length?`تم تحديث ${sources.map(srcAr).join('، ')} دون ظهور حالة جديدة`:'تم رصد تغيير وتحديث البيانات';
+    add('تغيير في Odoo',text,'change');
+  }
   persistSnapshot(cur)
 }
 function seed(){ensure();const cur=currentMap();if(Object.keys(cur).length||state?.data){persistSnapshot(cur);seeded=true}}
