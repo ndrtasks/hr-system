@@ -41,17 +41,15 @@ function describeChange(d){
   if(k==='planning')return{title:'تحديث جدول الدوام',text:label?`تم تعديل جدول دوام ${label}`:'تم تعديل جدول دوام في Odoo'};
   return{title:`تحديث ${srcAr(k)}`,text:label?`${srcAr(k)}: ${label}`:`تم تحديث ${srcAr(k)} في Odoo`};
 }
+function notifyFreshState(){
+  if(!(state?.hasPrevious&&Number(state?.delta?.fresh||0)>0))return;
+  const fresh=(state?.data?.findings||[]).filter(f=>(f.trend==='new'||f.reopened)&&(typeof isOpen!=='function'||isOpen(f))).slice(0,4);
+  fresh.forEach(f=>{const k=key(f),kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});
+  if(Number(state.delta.fresh)>4)add(`${state.delta.fresh} حالات جديدة`,`تم رصد ${state.delta.fresh} حالات جديدة بعد تحديث Odoo`,'info');
+}
 function process(detail={}){
   ensure();const cur=currentMap();
-  if(!seeded){
-    persistSnapshot(cur);seeded=true;
-    if(state?.hasPrevious&&Number(state?.delta?.fresh||0)>0){
-      const fresh=(state?.data?.findings||[]).filter(f=>(f.trend==='new'||f.reopened)&&(typeof isOpen!=='function'||isOpen(f))).slice(0,4);
-      fresh.forEach(f=>{const k=key(f),kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});
-      if(Number(state.delta.fresh)>4)add(`${state.delta.fresh} حالات جديدة`,`تم رصد ${state.delta.fresh} حالات جديدة بعد تحديث Odoo`,'info');
-    }
-    return
-  }
+  if(!seeded){persistSnapshot(cur);seeded=true;notifyFreshState();return}
   const prev=snapshot||{},newKeys=Object.keys(cur).filter(k=>!prev[k]),cleared=Object.keys(prev).filter(k=>!cur[k]);
   if(newKeys.length){newKeys.slice(0,4).forEach(k=>{const f=cur[k],kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});if(newKeys.length>4)add(`${newKeys.length} حالات جديدة`,`تم رصد ${newKeys.length} حالات جديدة بعد تحديث Odoo`,'info')}
   if(cleared.length)add('تمت إزالة حالة',cleared.length===1?(prev[cleared[0]]?.title||'الحالة لم تعد موجودة بعد تحديث المصدر'):`${cleared.length} حالات لم تعد موجودة بعد التحديث`,'success');
@@ -62,7 +60,7 @@ function process(detail={}){
   }
   persistSnapshot(cur)
 }
-function seed(){ensure();const cur=currentMap();if(Object.keys(cur).length||state?.data){persistSnapshot(cur);seeded=true}}
+function seed(){if(seeded)return;ensure();const cur=currentMap();if(Object.keys(cur).length||state?.data){persistSnapshot(cur);seeded=true;notifyFreshState()}}
 load();
 window.addEventListener('ndr:audit-updated',e=>process(e.detail||{}));
 window.addEventListener('ndr:attendance-changed',()=>{setTimeout(()=>{if(!window.NDRLiveWatch)add('تحديث الحضور','تم تعديل سجل حضور داخل NDR','change')},500)});
