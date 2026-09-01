@@ -3,16 +3,16 @@
     const params=new URLSearchParams(location.search);
     const fromOdoo=params.get('source')==='odoo';
     const incoming=params.get('connector')||'';
-    const stored=localStorage.getItem('ndr-connector-token')||'';
+    const stored=sessionStorage.getItem('ndr-present-connector')||'';
     if(!fromOdoo&&!incoming&&!stored)return;
 
     if(incoming){
-      localStorage.setItem('ndr-connector-token',incoming);
+      sessionStorage.setItem('ndr-present-connector',incoming);
       params.delete('connector');
       const q=params.toString();
       history.replaceState({},'',location.pathname+(q?'?'+q:'')+location.hash);
     }
-    const token=incoming||localStorage.getItem('ndr-connector-token')||'';
+    const token=incoming||sessionStorage.getItem('ndr-present-connector')||'';
     if(!token)return;
 
     const CONNECTOR='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-odoo-connector';
@@ -43,7 +43,7 @@
       badge.id='ndrOdooMode';badge.className='statuspill';badge.innerHTML='<i class="statusdot live"></i><span>مفتوح من Odoo</span>';
       const back=document.createElement('button');
       back.className='ghost';back.textContent='↩ العودة إلى Odoo';
-      back.onclick=()=>{const base=connectorInfo?.baseUrl||localStorage.getItem('ndr-odoo-url')||'';if(base)location.href=base.replace(/\/$/,'')+'/odoo';else history.back();};
+      back.onclick=()=>{const base=connectorInfo?.baseUrl||sessionStorage.getItem('ndr-present-odoo-url')||'';if(base)location.href=base.replace(/\/$/,'')+'/odoo';else history.back();};
       host.prepend(back);host.prepend(badge);
     };
 
@@ -79,8 +79,8 @@
       };
 
       requestConnection=function(){
-        const baseUrl=connectorInfo?.baseUrl||localStorage.getItem('ndr-odoo-url')||state.connection?.baseUrl||'';
-        const database=connectorInfo?.database||localStorage.getItem('ndr-odoo-db')||state.connection?.database||'';
+        const baseUrl=connectorInfo?.baseUrl||sessionStorage.getItem('ndr-present-odoo-url')||state.connection?.baseUrl||'';
+        const database=connectorInfo?.database||sessionStorage.getItem('ndr-present-odoo-db')||state.connection?.database||'';
         state.connection={baseUrl,database,apiKey:''};
         return baseUrl?{baseUrl,database,apiKey:'vault-connector'}:null;
       };
@@ -89,18 +89,14 @@
     (async()=>{
       await wait();
       try{
-        // Opening NDR from Odoo is intentionally read-only. App/menu/icon changes happen only from the explicit update button.
         connectorInfo=await post(CONNECTOR,{action:'probe',launchToken:token});
         state.connection={baseUrl:connectorInfo.baseUrl||'',database:connectorInfo.database||'',apiKey:''};
-        if(connectorInfo.baseUrl)localStorage.setItem('ndr-odoo-url',connectorInfo.baseUrl);
-        if(connectorInfo.database)localStorage.setItem('ndr-odoo-db',connectorInfo.database);else localStorage.removeItem('ndr-odoo-db');
+        if(connectorInfo.baseUrl)sessionStorage.setItem('ndr-present-odoo-url',connectorInfo.baseUrl);
+        if(connectorInfo.database)sessionStorage.setItem('ndr-present-odoo-db',connectorInfo.database);else sessionStorage.removeItem('ndr-present-odoo-db');
         state.connected=true;state.demo=false;
         sessionStorage.removeItem('ndr-odoo-key');
         enableVaultMode();
         try{syncConnectionInputs();}catch{}
-        const key=document.getElementById('connectionKey');
-        if(key){key.value='';key.disabled=false;key.placeholder='الاتصال محفوظ ومشفر — أدخل مفتاحا جديدا فقط عند التغيير';}
-        const secret=document.getElementById('secretState');if(secret){secret.textContent='الاتصال محفوظ ومشفر';secret.classList.remove('empty');}
         try{updateConnectionUi();}catch{}
         markReady();
         addOdooChrome();
@@ -111,7 +107,7 @@
         console.error('NDR Odoo Mode:',e);
         if(fromOdoo)addOdooChrome();
         window.NDROdooVault={token,active:false,error:String(e?.message||e)};
-        try{toast('تعذر تفعيل اتصال Odoo المحفوظ. افتح ربط Odoo للمراجعة.');}catch{}
+        try{toast('تعذر تفعيل اتصال Odoo للعرض.');}catch{}
       }
     })();
   }catch(e){console.error('NDR Odoo Mode bootstrap:',e);}
