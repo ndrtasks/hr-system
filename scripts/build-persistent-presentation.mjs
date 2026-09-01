@@ -1,0 +1,50 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { transformWithEsbuild } from 'vite';
+
+const src=path.resolve('dist/ndr-hr-intelligence');
+const root=path.resolve('dist/ndr-hr-presentation');
+const oldBase='/ndr-hr-intelligence/';
+const newBase='/ndr-hr-presentation/';
+const gateway='/api/presentation/gateway/';
+const serviceRe=/https:\/\/ecaexxjfzujoesptzurd\.supabase\.co\/functions\/v1\/([a-z0-9-]+)/gi;
+const serviceCode=(s)=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
+
+async function exists(p){try{await fs.access(p);return true}catch{return false}}
+if(!(await exists(src)))process.exit(0);
+await fs.rm(root,{recursive:true,force:true});
+await fs.cp(src,root,{recursive:true});
+
+const runtime=`(()=>{\n'use strict';\nif(window.__ndrPersistentPresentation)return;window.__ndrPersistentPresentation=true;\nconst BASE='https://ndr-hr-demo.odoo.com';\ntry{localStorage.removeItem('ndr-odoo-key');localStorage.removeItem('ndr-connector-token');sessionStorage.removeItem('ndr-odoo-key');sessionStorage.removeItem('ndr-present-connector');}catch{}\nfunction chrome(){\n document.documentElement.dataset.ndrPresentation='1';\n const ws=document.querySelector('.workspace b');if(ws)ws.textContent='بيئة العرض';\n const nav=document.querySelector('[data-page="integrationPage"]');if(nav)nav.remove();\n const page=document.getElementById('integrationPage');if(page)page.remove();\n if(new URLSearchParams(location.search).get('source')==='odoo'&&!document.getElementById('ndrOdooMode')){\n  const host=document.querySelector('.topactions');if(host){\n   const badge=document.createElement('span');badge.id='ndrOdooMode';badge.className='statuspill';badge.innerHTML='<i class="statusdot live"></i><span>مفتوح من Odoo</span>';\n   const back=document.createElement('button');back.className='ghost';back.textContent='↩ العودة إلى Odoo';back.onclick=()=>location.href=BASE+'/odoo';host.prepend(back);host.prepend(badge);\n  }\n }\n}\nasync function boot(){\n for(let i=0;i<200;i++){\n  if(typeof state!=='undefined'&&typeof requestConnection==='function'&&document.getElementById('appShell'))break;\n  await new Promise(r=>setTimeout(r,50));\n }\n try{\n  state.connection={baseUrl:BASE,database:'',apiKey:'presentation-vault'};state.connected=true;state.demo=false;\n  requestConnection=function(){state.connection={baseUrl:BASE,database:'',apiKey:'presentation-vault'};return state.connection};\n  window.NDROdooVault={token:'presentation',connectorInfo:{baseUrl:BASE,database:''},active:true};\n  window.__ndrVaultFetchEnabled=true;\n  try{updateConnectionUi()}catch{}\n  const mode=document.getElementById('modeText');if(mode)mode.textContent='Odoo Live';\n  const source=document.getElementById('sourceText');if(source)source.textContent='Odoo Live';\n  chrome();\n  window.dispatchEvent(new CustomEvent('ndr:odoo-vault-ready',{detail:{baseUrl:BASE}}));\n }catch(e){console.error('NDR presentation bootstrap',e)}\n}\nchrome();new MutationObserver(chrome).observe(document.documentElement,{childList:true,subtree:true});boot();\n})();`;
+await fs.writeFile(path.join(root,'presentation-runtime.js'),runtime,'utf8');
+
+const loaderPath=path.join(root,'loader.js');
+let loader=await fs.readFile(loaderPath,'utf8');
+loader=loader.split(oldBase).join(newBase);
+loader=loader.replace(/['\"]\/ndr-hr-presentation\/odoo-mode\.js['\"],?/g,'');
+loader=loader.replace(/['\"]\/ndr-hr-presentation\/connection-manager\.js['\"],?/g,'');
+loader=loader.replace(/['\"]\/ndr-hr-presentation\/odoo-delete\.js['\"],?/g,'');
+loader=loader.replace("'/ndr-hr-presentation/navigation-fix.js',","'/ndr-hr-presentation/navigation-fix.js','/ndr-hr-presentation/presentation-runtime.js',");
+await fs.writeFile(loaderPath,loader,'utf8');
+
+for(const name of await fs.readdir(root)){
+ if(!/\.(html|part|css)$/i.test(name))continue;
+ const p=path.join(root,name);let text=await fs.readFile(p,'utf8');text=text.split(oldBase).join(newBase);await fs.writeFile(p,text,'utf8');
+}
+
+const indexPath=path.join(root,'index.html');
+const indexText=await fs.readFile(indexPath,'utf8');
+const loaderText=await fs.readFile(loaderPath,'utf8');
+const refRe=/\/ndr-hr-presentation\/([^?\"'`\s]+\.js)/g;
+const active=new Set(['loader.js','presentation-runtime.js']);
+for(const text of [indexText,loaderText]){let m;while((m=refRe.exec(text)))active.add(m[1]);}
+const names=await fs.readdir(root);const jsNames=names.filter(n=>n.endsWith('.js'));const activeNames=[...active].filter(n=>jsNames.includes(n));
+const opaque=new Map(activeNames.map(name=>[name,crypto.createHash('sha256').update(`ndr-persistent-presentation:${name}`).digest('hex').slice(0,16)+'.js']));
+function rewrite(text){let out=String(text).replace(serviceRe,(_,slug)=>`${gateway}${serviceCode(String(slug).toLowerCase())}`);for(const [from,to] of opaque)out=out.split(newBase+from).join(newBase+to);return out;}
+function strip(name,text){let out=String(text);if(name==='layout1.part')out=out.replace(/<button[^>]*data-page=[\"']integrationPage[\"'][\s\S]*?<\/button>/g,'');if(name==='layout4.part'){const i=out.indexOf('<section id="integrationPage"');if(i>=0)out=out.slice(0,i);}if(name==='layout5.part')out=out.replace(/^[\s\S]*?<\/section>(?=\s*<\/div>\s*<\/main>)/,'');return out;}
+for(const name of activeNames){const p=path.join(root,name);let code=rewrite(await fs.readFile(p,'utf8')).replace(/\/\/# sourceMappingURL=.*$/gm,'');const result=await transformWithEsbuild(code,name,{minify:true,sourcemap:false,legalComments:'none',charset:'utf8',target:'es2020'});await fs.writeFile(path.join(root,opaque.get(name)),result.code,'utf8');}
+for(const name of jsNames)await fs.unlink(path.join(root,name));
+for(const name of await fs.readdir(root)){if(!/\.(html|part)$/i.test(name))continue;const p=path.join(root,name);let text=rewrite(strip(name,await fs.readFile(p,'utf8')));if(name==='index.html'){if(!/name=[\"']robots[\"']/i.test(text))text=text.replace(/<head>/i,'<head><meta name="robots" content="noindex,nofollow,noarchive">');text=text.replace(/<title>[\s\S]*?<\/title>/i,'<title>NDR HR — Presentation</title>');}await fs.writeFile(p,text,'utf8');}
+async function maps(dir){for(const ent of await fs.readdir(dir,{withFileTypes:true})){const p=path.join(dir,ent.name);if(ent.isDirectory())await maps(p);else if(ent.name.endsWith('.map'))await fs.unlink(p)}}await maps(root);
+console.log(`NDR persistent presentation built: ${activeNames.length} protected JS assets.`);
