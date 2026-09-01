@@ -10,9 +10,20 @@ const remote='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/';
 async function exists(p){try{await fs.access(p);return true}catch{return false}}
 if(!(await exists(root)))process.exit(0);
 
+const indexPath=path.join(root,'index.html');
+const loaderPath=path.join(root,'loader.js');
+const indexText=await fs.readFile(indexPath,'utf8');
+const loaderText=await fs.readFile(loaderPath,'utf8');
+const refRe=/\/ndr-hr-intelligence\/([^?"'`\s]+\.js)/g;
+const active=new Set(['loader.js']);
+for(const text of [indexText,loaderText]){
+  let m;while((m=refRe.exec(text)))active.add(m[1]);
+}
+
 const names=await fs.readdir(root);
 const jsNames=names.filter(n=>n.endsWith('.js'));
-const opaque=new Map(jsNames.map(name=>{
+const activeNames=[...active].filter(n=>jsNames.includes(n));
+const opaque=new Map(activeNames.map(name=>{
   const id=crypto.createHash('sha256').update(`ndr-presentation-20260901:${name}`).digest('hex').slice(0,16);
   return [name,`${id}.js`];
 }));
@@ -25,14 +36,16 @@ function rewriteRefs(text){
   return out;
 }
 
-for(const name of jsNames){
+for(const name of activeNames){
   const src=path.join(root,name);
   let code=await fs.readFile(src,'utf8');
   code=rewriteRefs(code).replace(/\/\/# sourceMappingURL=.*$/gm,'');
   const result=await transformWithEsbuild(code,name,{minify:true,sourcemap:false,legalComments:'none',charset:'utf8',target:'es2020'});
-  const dest=path.join(root,opaque.get(name));
-  await fs.writeFile(dest,result.code,'utf8');
-  if(dest!==src)await fs.unlink(src);
+  await fs.writeFile(path.join(root,opaque.get(name)),result.code,'utf8');
+}
+
+for(const name of jsNames){
+  await fs.unlink(path.join(root,name));
 }
 
 for(const name of await fs.readdir(root)){
@@ -52,4 +65,4 @@ async function removeMaps(dir){
   }
 }
 await removeMaps(path.resolve('dist'));
-console.log(`NDR presentation hardened: ${jsNames.length} JavaScript assets obfuscated and proxied.`);
+console.log(`NDR presentation hardened: ${activeNames.length} active JavaScript assets kept, renamed and proxied.`);
