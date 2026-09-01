@@ -1,12 +1,12 @@
 (()=>{const originalFetch=window.fetch.bind(window);const oldApi='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-v4';const liveApi='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live-v2';window.fetch=(input,init)=>{try{const url=typeof input==='string'?input:input?.url;if(url&&url.startsWith(oldApi)){const next=url.replace(oldApi,liveApi);return originalFetch(next,init)}}catch{}return originalFetch(input,init)};})();
 (async()=>{
   const root=document.getElementById('ndr-root');
-  const assetVersion='20260830-qa9';
+  const assetVersion='20260901-qa10';
   try{
     const urls=[1,2,3,4,5,6].map(n=>`/ndr-hr-intelligence/layout${n}.part?v=${assetVersion}`);
     const parts=await Promise.all(urls.map(async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error(`layout ${r.status}`);return r.text()}));
     root.innerHTML=parts.join('');
-    const scripts=['/ndr-hr-intelligence/app1.js','/ndr-hr-intelligence/app23.js','/ndr-hr-intelligence/ux-fixes.js','/ndr-hr-intelligence/workflow-polish.js','/ndr-hr-intelligence/navigation-fix.js','/ndr-hr-intelligence/odoo-mode.js','/ndr-hr-intelligence/connection-manager.js','/ndr-hr-intelligence/odoo-delete.js','/ndr-hr-intelligence/attendance-v2.js','/ndr-hr-intelligence/attendance-bulk.js','/ndr-hr-intelligence/attendance-bulk-preview.js','/ndr-hr-intelligence/attendance-leave-guard.js','/ndr-hr-intelligence/attendance-clarity.js','/ndr-hr-intelligence/live-watch-lite.js','/ndr-hr-intelligence/auto-sync.js','/ndr-hr-intelligence/notification-center.js','/ndr-hr-intelligence/findings-ui-controller.js'];
+    const scripts=['/ndr-hr-intelligence/app1.js','/ndr-hr-intelligence/audit-v3-router.js','/ndr-hr-intelligence/live-case-order-fix.js','/ndr-hr-intelligence/app23.js','/ndr-hr-intelligence/ux-fixes.js','/ndr-hr-intelligence/workflow-polish.js','/ndr-hr-intelligence/navigation-fix.js','/ndr-hr-intelligence/odoo-mode.js','/ndr-hr-intelligence/connection-manager.js','/ndr-hr-intelligence/odoo-delete.js','/ndr-hr-intelligence/attendance-v2.js','/ndr-hr-intelligence/attendance-bulk.js','/ndr-hr-intelligence/attendance-bulk-preview.js','/ndr-hr-intelligence/attendance-leave-guard.js','/ndr-hr-intelligence/attendance-clarity.js','/ndr-hr-intelligence/live-watch-lite.js','/ndr-hr-intelligence/auto-sync.js','/ndr-hr-intelligence/notification-center.js','/ndr-hr-intelligence/findings-ui-controller.js'];
     for(const src of scripts){
       await new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src+`?v=${assetVersion}`;s.onload=ok;s.onerror=()=>fail(new Error(`asset ${src}`));document.body.appendChild(s)});
     }
