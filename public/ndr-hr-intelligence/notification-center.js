@@ -1,12 +1,13 @@
 (()=>{
 'use strict';
 if(window.__ndrNotifyCenterInstalled)return;window.__ndrNotifyCenterInstalled=true;
-const STORE='ndr-notification-center-v1',SNAP='ndr-notification-snapshot-v1';
+const STORE='ndr-notification-center-v2',SNAP='ndr-notification-snapshot-v2';
 let notes=[],snapshot=null,seeded=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>new Date().toISOString();
 const time=t=>{try{return new Intl.DateTimeFormat('ar-SA',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit'}).format(new Date(t))}catch{return''}};
-const srcAr=x=>({attendance:'الحضور',leaves:'الإجازات',planning:'جدول الدوام',employees:'الموظفون',employeeVersions:'العقود',contracts:'العقود',calendarLines:'أوقات العمل',calendarLeaves:'العطل',calendars:'التقويم',departments:'الأقسام',resources:'Planning'}[x]||x);
+const srcAr=x=>({attendance:'الحضور',leaves:'الإجازات',planning:'جدول الدوام',employees:'الموظفون',employeeVersions:'العقود',contracts:'العقود',calendarLines:'ساعات الدوام',calendarLeaves:'العطل',calendars:'التقويم',departments:'الأقسام',resources:'موارد التخطيط',leaveTypes:'أنواع الإجازات',companies:'الشركة'}[x]||x);
+const quiet=new Set(['resources','calendarLines','calendarLeaves','calendars','departments','leaveTypes','companies']);
 function load(){try{notes=JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch{notes=[]}try{snapshot=JSON.parse(sessionStorage.getItem(SNAP)||'null')}catch{snapshot=null}}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(notes.slice(0,50)))}catch{}renderBadge();renderList()}
 function key(f){try{return typeof findingKey==='function'?findingKey(f):`${f.code}:${f.ref?.model||''}:${f.ref?.id||''}`}catch{return `${f.code}:${f.ref?.id||''}`}}
@@ -28,31 +29,33 @@ function toggleDrawer(){const d=document.getElementById('ndrNotifyDrawer');if(!d
 function closeDrawer(){document.getElementById('ndrNotifyDrawer')?.classList.remove('show');document.getElementById('ndrNotifyShade')?.classList.remove('show')}
 function renderBadge(){ensure();const el=document.getElementById('ndrNotifyCount');if(!el)return;const unread=notes.filter(x=>!x.read).length;el.textContent=unread>99?'99+':String(unread);el.classList.toggle('empty',!unread)}
 function renderList(){const host=document.getElementById('ndrNotifyList');if(!host)return;host.innerHTML=notes.length?notes.map(x=>`<button class="ndr-note ${x.read?'read':''}" data-note="${esc(x.id)}"><i class="${esc(x.kind||'info')}"></i><div><strong>${esc(x.title)}</strong><p>${esc(x.text||'')}</p><small>${esc(time(x.at))}</small></div></button>`).join(''):'<div class="ndr-notify-empty">لا توجد تغييرات مسجلة حاليا</div>';host.querySelectorAll('[data-note]').forEach(b=>b.onclick=()=>{const n=notes.find(x=>x.id===b.dataset.note);if(n?.findingKey&&typeof openFinding==='function'){closeDrawer();openFinding(n.findingKey)}})}
-function add(title,text,kind='info',findingKey=''){
-  const note={id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title,text,kind,findingKey,at:now(),read:false};notes.unshift(note);notes=notes.slice(0,50);save();popup(note)
-}
+function add(title,text,kind='info',findingKey=''){const note={id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title,text,kind,findingKey,at:now(),read:false};notes.unshift(note);notes=notes.slice(0,50);save();popup(note)}
 function popup(n){ensure();const stack=document.getElementById('ndrNotifyStack');if(!stack)return;const el=document.createElement('button');el.className=`ndr-live-pop ${n.kind}`;el.innerHTML=`<i></i><div><strong>${esc(n.title)}</strong><span>${esc(n.text||'')}</span></div>`;el.onclick=()=>{if(n.findingKey&&typeof openFinding==='function')openFinding(n.findingKey);el.remove()};stack.prepend(el);requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),240)},5200)}
 function describeChange(d){
-  const before=d?.before||{},after=d?.after||{},label=String(after.label||'').trim(),oldLabel=String(before.label||'').trim(),source=srcAr(d?.key||'');
-  if(d?.key==='employees'&&label&&oldLabel&&label!==oldLabel)return `تغير اسم الموظف من ${oldLabel} إلى ${label}`;
-  return label?`${source}: ${label}`:source;
+  const k=d?.key||'',before=d?.before||{},after=d?.after||{},label=String(after.label||before.label||'').trim(),oldLabel=String(before.label||'').trim();
+  if(quiet.has(k))return null;
+  if(k==='employees'&&label&&oldLabel&&label!==oldLabel)return{title:'تعديل بيانات موظف',text:`تغير اسم الموظف من ${oldLabel} إلى ${label}`};
+  if(k==='attendance')return{title:'تحديث الحضور',text:label?`تم تعديل سجل حضور للموظف ${label}`:'تم تعديل سجل حضور في Odoo'};
+  if(k==='leaves')return{title:'تحديث الإجازات',text:label?`تم تعديل طلب إجازة للموظف ${label}`:'تم تعديل طلب إجازة في Odoo'};
+  if(k==='employeeVersions'||k==='contracts')return{title:'تحديث العقود',text:label?`تم تعديل بيانات العقد للموظف ${label}`:'تم تعديل بيانات عقد في Odoo'};
+  if(k==='planning')return{title:'تحديث جدول الدوام',text:label?`تم تعديل جدول دوام ${label}`:'تم تعديل جدول دوام في Odoo'};
+  return{title:`تحديث ${srcAr(k)}`,text:label?`${srcAr(k)}: ${label}`:`تم تحديث ${srcAr(k)} في Odoo`};
 }
 function process(detail={}){
   ensure();const cur=currentMap();if(!seeded){persistSnapshot(cur);seeded=true;return}
   const prev=snapshot||{},newKeys=Object.keys(cur).filter(k=>!prev[k]),cleared=Object.keys(prev).filter(k=>!cur[k]);
-  if(newKeys.length){newKeys.slice(0,3).forEach(k=>{const f=cur[k];const kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});if(newKeys.length>3)add(`${newKeys.length} حالات جديدة`,`تم رصد ${newKeys.length} حالات بعد آخر تغيير في Odoo`,'info')}
-  if(cleared.length)add('اختفت حالة من المصدر',cleared.length===1?(prev[cleared[0]]?.title||'تمت إزالة الحالة بعد تحديث المصدر'):`${cleared.length} حالات لم تعد موجودة بعد التحديث`,'success');
-  const sources=Array.isArray(detail.changedSources)?detail.changedSources:[],details=Array.isArray(detail.changedDetails)?detail.changedDetails:[];
+  if(newKeys.length){newKeys.slice(0,4).forEach(k=>{const f=cur[k],kind=f.severity==='critical'?'critical':f.severity==='high'?'warning':'info';add(f.title,`${f.employee}${f.category?` • ${f.category}`:''}`,kind,k)});if(newKeys.length>4)add(`${newKeys.length} حالات جديدة`,`تم رصد ${newKeys.length} حالات جديدة بعد تحديث Odoo`,'info')}
+  if(cleared.length)add('تمت إزالة حالة',cleared.length===1?(prev[cleared[0]]?.title||'الحالة لم تعد موجودة بعد تحديث المصدر'):`${cleared.length} حالات لم تعد موجودة بعد التحديث`,'success');
   if(detail.sourceChanged&&!newKeys.length&&!cleared.length){
-    const lines=details.map(describeChange).filter(Boolean);
-    const text=lines.length?`تم تحديث ${lines.slice(0,2).join(' • ')}${lines.length>2?` • +${lines.length-2} أخرى`:''} دون ظهور حالة جديدة`:sources.length?`تم تحديث ${sources.map(srcAr).join('، ')} دون ظهور حالة جديدة`:'تم رصد تغيير وتحديث البيانات';
-    add('تغيير في Odoo',text,'change');
+    const descriptions=(Array.isArray(detail.changedDetails)?detail.changedDetails:[]).map(describeChange).filter(Boolean);
+    if(descriptions.length===1)add(descriptions[0].title,descriptions[0].text,'change');
+    else if(descriptions.length>1)add('تحديث بيانات Odoo',descriptions.slice(0,2).map(x=>x.text).join(' • ')+(descriptions.length>2?` • +${descriptions.length-2} أخرى`:''),'change');
   }
   persistSnapshot(cur)
 }
 function seed(){ensure();const cur=currentMap();if(Object.keys(cur).length||state?.data){persistSnapshot(cur);seeded=true}}
 load();
 window.addEventListener('ndr:audit-updated',e=>process(e.detail||{}));
-window.addEventListener('ndr:attendance-changed',()=>{setTimeout(()=>{if(!window.NDRLiveWatch)add('تغيير في الحضور','تم تعديل سجل حضور داخل NDR','change')},500)});
+window.addEventListener('ndr:attendance-changed',()=>{setTimeout(()=>{if(!window.NDRLiveWatch)add('تحديث الحضور','تم تعديل سجل حضور داخل NDR','change')},500)});
 (async()=>{for(let i=0;i<160;i++){ensure();if(typeof state!=='undefined'&&state.data){seed();return}await new Promise(r=>setTimeout(r,100))}ensure()})();
 })();
