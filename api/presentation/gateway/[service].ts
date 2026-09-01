@@ -1,14 +1,19 @@
+import crypto from 'node:crypto';
+
 const ORIGIN='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1';
-const ALLOWED=new Set([
+const SERVICES=[
   'ndr-odoo-connector','ndr-hr-audit-v4','ndr-hr-audit-vault','ndr-hr-audit-nav','ndr-hr-audit-schedule',
   'ndr-hr-audit-live','ndr-hr-audit-live-v2','ndr-hr-audit-live-v3','ndr-hr-audit-live-v4','ndr-hr-change-watch',
   'ndr-attendance-register','ndr-attendance-bulk','ndr-odoo-app-installer','ndr-odoo-attendance-inspect','ndr-hr-audit-custom'
-]);
+];
+const code=s=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
+const BY_CODE=new Map(SERVICES.map(s=>[code(s),s]));
 
 export default async function handler(request:any,response:any){
   const raw=request.query?.service;
-  const service=Array.isArray(raw)?String(raw[0]||''):String(raw||'');
-  if(!ALLOWED.has(service))return response.status(404).json({message:'not_found'});
+  const requested=Array.isArray(raw)?String(raw[0]||''):String(raw||'');
+  const service=BY_CODE.get(requested)||'';
+  if(!service)return response.status(404).json({message:'not_found'});
   if(!['GET','POST','OPTIONS'].includes(String(request.method||'GET').toUpperCase()))return response.status(405).json({message:'method_not_allowed'});
   if(request.method==='OPTIONS')return response.status(204).end();
   const qs=new URLSearchParams();
