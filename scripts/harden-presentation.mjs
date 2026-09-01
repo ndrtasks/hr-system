@@ -6,7 +6,7 @@ import { transformWithEsbuild } from 'vite';
 const root=path.resolve('dist/ndr-hr-intelligence');
 const gateway='/api/presentation/gateway/';
 const serviceRe=/https:\/\/ecaexxjfzujoesptzurd\.supabase\.co\/functions\/v1\/([a-z0-9-]+)/gi;
-const serviceCode=s=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
+const serviceCode=(s)=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
 
 async function exists(p){try{await fs.access(p);return true}catch{return false}}
 if(!(await exists(root)))process.exit(0);
@@ -31,9 +31,18 @@ const opaque=new Map(activeNames.map(name=>{
 
 function rewriteRefs(text){
   let out=String(text).replace(serviceRe,(_,slug)=>`${gateway}${serviceCode(String(slug).toLowerCase())}`);
-  for(const [from,to] of opaque){
-    out=out.split(`/ndr-hr-intelligence/${from}`).join(`/ndr-hr-intelligence/${to}`);
+  for(const [from,to] of opaque)out=out.split(`/ndr-hr-intelligence/${from}`).join(`/ndr-hr-intelligence/${to}`);
+  return out;
+}
+
+function stripTechnicalMarkup(name,text){
+  let out=String(text);
+  if(name==='layout1.part')out=out.replace(/<button[^>]*data-page=["']integrationPage["'][\s\S]*?<\/button>/g,'');
+  if(name==='layout4.part'){
+    const i=out.indexOf('<section id="integrationPage"');
+    if(i>=0)out=out.slice(0,i);
   }
+  if(name==='layout5.part')out=out.replace(/^[\s\S]*?<\/section>(?=\s*<\/div>\s*<\/main>)/,'');
   return out;
 }
 
@@ -50,7 +59,8 @@ for(const name of jsNames)await fs.unlink(path.join(root,name));
 for(const name of await fs.readdir(root)){
   if(!/\.(html|part)$/i.test(name))continue;
   const p=path.join(root,name);
-  let text=rewriteRefs(await fs.readFile(p,'utf8'));
+  let text=stripTechnicalMarkup(name,await fs.readFile(p,'utf8'));
+  text=rewriteRefs(text);
   if(name==='index.html'&&!/name=["']robots["']/i.test(text))text=text.replace(/<head>/i,'<head><meta name="robots" content="noindex,nofollow,noarchive">');
   await fs.writeFile(p,text,'utf8');
 }
@@ -62,4 +72,4 @@ async function removeMaps(dir){
   }
 }
 await removeMaps(path.resolve('dist'));
-console.log(`NDR presentation hardened: ${activeNames.length} active JavaScript assets kept, renamed and proxied.`);
+console.log(`NDR presentation hardened: ${activeNames.length} active JavaScript assets kept, renamed and proxied; technical integration markup removed.`);
