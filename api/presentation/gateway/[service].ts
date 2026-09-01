@@ -2,9 +2,10 @@ import crypto from 'node:crypto';
 
 const ORIGIN='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1';
 const SERVICES=[
-  'ndr-odoo-connector','ndr-hr-audit-v4','ndr-hr-audit-vault','ndr-hr-audit-nav','ndr-hr-audit-schedule',
-  'ndr-hr-audit-live','ndr-hr-audit-live-v2','ndr-hr-audit-live-v3','ndr-hr-audit-live-v4','ndr-hr-change-watch',
-  'ndr-attendance-register','ndr-attendance-bulk','ndr-odoo-app-installer','ndr-odoo-attendance-inspect','ndr-hr-audit-custom'
+  'ndr-hr-tools-live','ndr-hr-audit-v4','ndr-hr-audit-v4-ui','ndr-hr-intelligence-api','ndr-hr-audit-vault',
+  'ndr-hr-audit-nav','ndr-hr-audit-schedule','ndr-hr-audit-live','ndr-hr-audit-live-v2','ndr-hr-audit-live-v3',
+  'ndr-hr-audit-live-v4','ndr-hr-change-watch','ndr-hr-audit-selftest','ndr-hr-audit-custom',
+  'ndr-odoo-connector','ndr-odoo-app-installer','ndr-odoo-attendance-inspect','ndr-attendance-register','ndr-attendance-bulk'
 ];
 const code=s=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
 const BY_CODE=new Map(SERVICES.map(s=>[code(s),s]));
