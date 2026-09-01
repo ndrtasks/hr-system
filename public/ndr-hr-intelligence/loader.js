@@ -1,7 +1,7 @@
 (()=>{const originalFetch=window.fetch.bind(window);const oldApi='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-v4';const liveApi='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/ndr-hr-audit-live-v2';window.fetch=(input,init)=>{try{const url=typeof input==='string'?input:input?.url;if(url&&url.startsWith(oldApi)){const next=url.replace(oldApi,liveApi);return originalFetch(next,init)}}catch{}return originalFetch(input,init)};})();
 (async()=>{
   const root=document.getElementById('ndr-root');
-  const assetVersion='20260901-qa10';
+  const assetVersion='20260901-qa11';
   try{
     const urls=[1,2,3,4,5,6].map(n=>`/ndr-hr-intelligence/layout${n}.part?v=${assetVersion}`);
     const parts=await Promise.all(urls.map(async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error(`layout ${r.status}`);return r.text()}));
