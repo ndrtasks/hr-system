@@ -5,7 +5,8 @@ import { transformWithEsbuild } from 'vite';
 
 const root=path.resolve('dist/ndr-hr-intelligence');
 const gateway='/api/presentation/gateway/';
-const remote='https://ecaexxjfzujoesptzurd.supabase.co/functions/v1/';
+const serviceRe=/https:\/\/ecaexxjfzujoesptzurd\.supabase\.co\/functions\/v1\/([a-z0-9-]+)/gi;
+const serviceCode=s=>crypto.createHash('sha256').update(`ndr-presentation-gateway:${s}`).digest('hex').slice(0,12);
 
 async function exists(p){try{await fs.access(p);return true}catch{return false}}
 if(!(await exists(root)))process.exit(0);
@@ -29,7 +30,7 @@ const opaque=new Map(activeNames.map(name=>{
 }));
 
 function rewriteRefs(text){
-  let out=String(text).split(remote).join(gateway);
+  let out=String(text).replace(serviceRe,(_,slug)=>`${gateway}${serviceCode(String(slug).toLowerCase())}`);
   for(const [from,to] of opaque){
     out=out.split(`/ndr-hr-intelligence/${from}`).join(`/ndr-hr-intelligence/${to}`);
   }
@@ -44,17 +45,13 @@ for(const name of activeNames){
   await fs.writeFile(path.join(root,opaque.get(name)),result.code,'utf8');
 }
 
-for(const name of jsNames){
-  await fs.unlink(path.join(root,name));
-}
+for(const name of jsNames)await fs.unlink(path.join(root,name));
 
 for(const name of await fs.readdir(root)){
   if(!/\.(html|part)$/i.test(name))continue;
   const p=path.join(root,name);
   let text=rewriteRefs(await fs.readFile(p,'utf8'));
-  if(name==='index.html'&&!/name=["']robots["']/i.test(text)){
-    text=text.replace(/<head>/i,'<head><meta name="robots" content="noindex,nofollow,noarchive">');
-  }
+  if(name==='index.html'&&!/name=["']robots["']/i.test(text))text=text.replace(/<head>/i,'<head><meta name="robots" content="noindex,nofollow,noarchive">');
   await fs.writeFile(p,text,'utf8');
 }
 
