@@ -34,7 +34,11 @@ function popup(n){ensure();const stack=document.getElementById('ndrNotifyStack')
 function describeChange(d){
   const k=d?.key||'',before=d?.before||{},after=d?.after||{},label=String(after.label||before.label||'').trim(),oldLabel=String(before.label||'').trim();
   if(quiet.has(k))return null;
-  if(k==='employees'&&label&&oldLabel&&label!==oldLabel)return{title:'تعديل بيانات موظف',text:`تغير اسم الموظف من ${oldLabel} إلى ${label}`};
+  if(k==='employees'){
+    const sameRecord=Number(before.id||0)>0&&Number(before.id||0)===Number(after.id||0);
+    if(sameRecord&&label&&oldLabel&&label!==oldLabel)return{title:'تعديل بيانات موظف',text:`تغير اسم الموظف من ${oldLabel} إلى ${label}`};
+    return{title:'تحديث بيانات موظف',text:label?`تم تحديث بيانات الموظف ${label}`:'تم تحديث بيانات موظف في Odoo'};
+  }
   if(k==='attendance')return{title:'تحديث الحضور',text:label?`تم تعديل سجل حضور للموظف ${label}`:'تم تعديل سجل حضور في Odoo'};
   if(k==='leaves')return{title:'تحديث الإجازات',text:label?`تم تعديل طلب إجازة للموظف ${label}`:'تم تعديل طلب إجازة في Odoo'};
   if(k==='employeeVersions'||k==='contracts')return{title:'تحديث العقود',text:label?`تم تعديل بيانات العقد للموظف ${label}`:'تم تعديل بيانات عقد في Odoo'};
