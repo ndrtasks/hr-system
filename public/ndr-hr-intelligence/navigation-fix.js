@@ -2,7 +2,6 @@
   const wait=()=>{
     if(typeof state==='undefined'||typeof openFinding!=='function'||typeof openOdooRef!=='function'){setTimeout(wait,80);return;}
 
-    // Odoo 19 canonical record route. This opens the actual record instead of a generic employee fallback.
     recordUrl=function(ref){
       const base=state.data?.navigation?.odooBaseUrl||state.connection?.baseUrl;
       if(!base||!ref?.model||!ref?.id)return null;
@@ -26,8 +25,9 @@
       R014:{path:'ملف الموظف ← مراقبة NDR',field:'انتهاء الترخيص المهني',button:'فتح ملف الموظف — ثم مراقبة NDR'},
       R015:{path:'ملف الموظف ← العمل ← بيانات العمل / فترة التجربة',field:'نهاية فترة التجربة',button:'فتح ملف الموظف — ثم تبويب العمل'},
       R016:{path:'ملف الموظف ← بيانات العقد',field:'تاريخ نهاية العقد / حالة العقد',button:'فتح ملف الموظف في Odoo'},
-      R017:{path:'الحضور ← سجلات التأخير التي كوّنت التكرار',field:'افتح سجلات التأخير المرتبطة واحدًا واحدًا',button:'فتح أول سجل تأخير'},
-      R018:{path:'الإجازات ← طلب الإجازة المعلق',field:'حالة الطلب ومسار الاعتماد',button:'فتح طلب الإجازة'}
+      R017:{path:'الحضور ← سجلات التأخير التي كوّنت التكرار',field:'افتح سجلات التأخير المرتبطة واحدا واحدا',button:'فتح أول سجل تأخير'},
+      R018:{path:'الإجازات ← طلب الإجازة المعلق',field:'حالة الطلب ومسار الاعتماد',button:'فتح طلب الإجازة'},
+      R024:{path:'ملف الموظف ← التقييم',field:'تاريخ التقييم القادم',button:'فتح ملف الموظف لمراجعة التقييم'}
     };
 
     function primaryRef(f){
@@ -55,22 +55,17 @@
       if(path)path.textContent=t.path;
       if(fld)fld.textContent=`المطلوب مراجعته: ${t.field}`;
       if(copy)copy.style.display='none';
-
       const hint=document.getElementById('sourceHint');
-      if(hint)hint.textContent=`السجل الذي سيفتحه NDR: ${t.path}. ملاحظة: Odoo Online لا يسمح لرابط خارجي بتحديد تبويب Studio أو تظليل حقل بعينه.`;
-
+      if(hint)hint.textContent=`السجل الذي سيفتحه NDR: ${t.path}.`;
       const ref=primaryRef(f);
       const btn=document.getElementById('openSourceBtn');
       if(btn){btn.textContent=`${t.button} ↗`;btn.onclick=()=>openOdooRef(ref,t.button);}
-
       const related=Array.isArray(f.relatedRefs)?f.relatedRefs:[];
       const box=document.getElementById('relatedRecords');
       if(box&&related.length){
         box.innerHTML=related.map((r,i)=>`<button class="relatedrecord" data-smart-related="${i}">${escapeHtml(relatedLabel(f,r,i))} ↗</button>`).join('');
         box.querySelectorAll('[data-smart-related]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.smartRelated);openOdooRef(related[i],relatedLabel(f,related[i],i));});
       }
-
-      // Keep employee navigation as a separate secondary action, never as the primary fix for attendance/leave cases.
       const emp=document.getElementById('openEmployeeBtn');
       if(emp)emp.textContent='ملف الموظف في Odoo ↗';
     };
